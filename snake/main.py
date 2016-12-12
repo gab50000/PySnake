@@ -3,7 +3,9 @@ import random
 from collections import deque
 
 
-curses_colors = [curses.COLOR_WHITE, curses.COLOR_CYAN, curses.COLOR_BLUE, curses.COLOR_GREEN, curses.COLOR_YELLOW, curses.COLOR_MAGENTA, curses.COLOR_RED, curses.COLOR_RED, curses.COLOR_RED, curses.COLOR_RED, curses.COLOR_RED]
+curses_colors = [curses.COLOR_WHITE, curses.COLOR_CYAN, curses.COLOR_BLUE, curses.COLOR_GREEN,
+                 curses.COLOR_YELLOW, curses.COLOR_MAGENTA, curses.COLOR_RED, curses.COLOR_RED,
+                 curses.COLOR_RED, curses.COLOR_RED, curses.COLOR_RED]
 
 
 class Game:
@@ -138,7 +140,7 @@ def main(screen):
         game_over = game.check_collisions()
         game.update_fruits()
         screen.refresh()
-        curses.napms(50)
+        curses.napms(70)
 
         if game_over:
             break
@@ -146,3 +148,4 @@ def main(screen):
 
 if __name__ == "__main__":
     curses.wrapper(main)
+    print("Vorbei!")
