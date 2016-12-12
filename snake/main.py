@@ -50,6 +50,7 @@ class Snake:
     def update(self, direction):
         if direction:
             self.direction = direction
+
         if self.direction == "N":
             self.y -= 1
         elif self.direction == "O":
@@ -66,15 +67,12 @@ class Snake:
 
 
 def main(screen):
-    #  screen = curses.initscr()
-    #  screen.keypad(True)
-    #  curses.curs_set(0)
-    #  curses.start_color()
+    curses.curs_set(0)
+    screen.nodelay(True)
     y, x = screen.getmaxyx()
 
-    #  for i in range(1, 11):
-        #  curses.init_pair(i, curses_colors[i], curses.COLOR_BLACK) 
-
+    for i in range(1, 11):
+        curses.init_pair(i, curses_colors[i], curses.COLOR_BLACK) 
 
     game = Game(x, y)
     snake = Snake.random_init(x, y)
@@ -83,7 +81,6 @@ def main(screen):
 
     while 1:
         screen.clear()
-        snake.update(direction)
         game.draw(screen)
         snake.draw(screen)
 
@@ -91,10 +88,9 @@ def main(screen):
         direction = game.check_input(screen)
         snake.update(direction)
         screen.refresh()
-        curses.napms(100)
+        curses.napms(50)
     print("Ende")
 
 
 if __name__ == "__main__":
     curses.wrapper(main)
-
