@@ -1,5 +1,6 @@
 import curses
 import random
+from collections import deque
 
 
 curses_colors = [curses.COLOR_WHITE, curses.COLOR_CYAN, curses.COLOR_BLUE, curses.COLOR_GREEN, curses.COLOR_YELLOW, curses.COLOR_MAGENTA, curses.COLOR_RED, curses.COLOR_RED, curses.COLOR_RED, curses.COLOR_RED, curses.COLOR_RED]
@@ -36,7 +37,7 @@ class Game:
 
 class Snake:
     def __init__(self, x, y, max_x, max_y, direction):
-        self.x, self.y = x, y
+        self.coordinates = deque([(x, y)])
         self.max_x, self.max_y = max_x, max_y
         self.direction = direction
         self.length = 1
@@ -51,19 +52,26 @@ class Snake:
         if direction:
             self.direction = direction
 
+        head_x, head_y = self.coordinates[-1]
         if self.direction == "N":
-            self.y -= 1
+            new_x, new_y = head_x, head_y - 1
         elif self.direction == "O":
-            self.x += 1
+            new_x, new_y = head_x + 1, head_y
         elif self.direction == "S":
-            self.y += 1
+            new_x, new_y = head_x, head_y + 1
         else:
-            self.x -= 1
-        self.x %= self.max_x
-        self.y %= self.max_y
+            new_x, new_y = head_x - 1, head_y
+
+        new_x %= self.max_x
+        new_y %= self.max_y
+
+        self.coordinates.append((new_x, new_y))
+        if len(self.coordinates) > self.length:
+            self.coordinates.popleft()
 
     def draw(self, screen):
-        screen.addstr(self.y, self.x, "X", curses.color_pair(3))
+        for x, y in self.coordinates:
+            screen.addstr(y, x, "X", curses.color_pair(3))
 
 
 def main(screen):
