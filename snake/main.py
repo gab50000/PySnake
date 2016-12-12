@@ -37,15 +37,33 @@ class Game:
         return direction
 
     def check_collisions(self):
-        for s in self.snakes:
+        fruits_to_be_deleted = []
+        snakes_to_be_deleted = []
+
+        for s_idx, s in enumerate(self.snakes):
             x_s, y_s = s.coordinates[-1]
-            to_be_deleted = []
-            for i, (x_f, y_f) in enumerate(self.fruits):
+            # Check fruit collision
+            for fruit_idx, (x_f, y_f) in enumerate(self.fruits):
                 if (x_s, y_s) == (x_f, y_f):
-                    s.length += 1
-                    to_be_deleted.append(i)
-        for tbd in to_be_deleted:
+                    s.length += 2
+                    fruits_to_be_deleted.append(fruit_idx)
+            # Check snake collisions
+            for s2_idx, s2 in enumerate(self.snakes):
+                if s_idx != s2_idx:
+                    for x2s, y2s in s2.coordinates:
+                        if (x_s, y_s) == (x2s, y2s):
+                            snakes_to_be_deleted.append(s_idx)
+                            return True
+                else:
+                    for x2s, y2s in list(s2.coordinates)[:-1]:
+                        if (x_s, y_s) == (x2s, y2s):
+                            snakes_to_be_deleted.append(s_idx)
+                            return True
+
+        for tbd in fruits_to_be_deleted:
             self.fruits.pop(tbd)
+        for snk in snakes_to_be_deleted:
+            self.snakes.pop(snk)
 
 
 class Snake:
@@ -63,17 +81,26 @@ class Snake:
 
     def update(self, direction):
         if direction:
-            self.direction = direction
+            new_direction = direction
+        else:
+            new_direction = self.direction
 
         head_x, head_y = self.coordinates[-1]
-        if self.direction == "N":
+
+        # Do not allow 180° turnaround
+        if (new_direction, self.direction) in [("N", "S"), ("S", "N"), ("O", "W"), ("W", "O")]:
+            new_direction = self.direction
+
+        if new_direction == "N":
             new_x, new_y = head_x, head_y - 1
-        elif self.direction == "O":
+        elif new_direction == "O":
             new_x, new_y = head_x + 1, head_y
-        elif self.direction == "S":
+        elif new_direction == "S":
             new_x, new_y = head_x, head_y + 1
         else:
             new_x, new_y = head_x - 1, head_y
+
+        self.direction = new_direction
 
         new_x %= self.max_x
         new_y %= self.max_y
@@ -106,13 +133,15 @@ def main(screen):
         game.draw(screen)
         snake.draw(screen)
 
-        screen.border(0)
         direction = game.check_input(screen)
         snake.update(direction)
-        game.check_collisions()
+        game_over = game.check_collisions()
         game.update_fruits()
         screen.refresh()
         curses.napms(50)
+
+        if game_over:
+            break
 
 
 if __name__ == "__main__":
