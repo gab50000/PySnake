@@ -7,18 +7,20 @@ curses_colors = [curses.COLOR_WHITE, curses.COLOR_CYAN, curses.COLOR_BLUE, curse
 
 
 class Game:
-    def __init__(self, width, height):
+    def __init__(self, width, height, snakes, *, log=None):
         self.fruits = []
-        self.worms = []
+        self.snakes = snakes
         self.width, self.height = width, height
+        self.log = log
 
     def update_fruits(self):
         if not self.fruits:
             new_x, new_y = random.randint(1, self.width - 1), random.randint(1, self.height - 1)
-            self.fruits.append((new_y, new_x))
+            self.fruits.append((new_x, new_y))
 
     def draw(self, screen):
-        screen.addstr(*self.fruits[0], "O", curses.color_pair(6))
+        for x, y in self.fruits:
+            screen.addstr(y, x, "O", curses.color_pair(6))
 
     def check_input(self, screen):
         inp = screen.getch()
@@ -33,6 +35,17 @@ class Game:
         else:
             direction = None
         return direction
+
+    def check_collisions(self):
+        for s in self.snakes:
+            x_s, y_s = s.coordinates[-1]
+            to_be_deleted = []
+            for i, (x_f, y_f) in enumerate(self.fruits):
+                if (x_s, y_s) == (x_f, y_f):
+                    s.length += 1
+                    to_be_deleted.append(i)
+        for tbd in to_be_deleted:
+            self.fruits.pop(tbd)
 
 
 class Snake:
@@ -75,6 +88,7 @@ class Snake:
 
 
 def main(screen):
+    log = open("log", "w")
     curses.curs_set(0)
     screen.nodelay(True)
     y, x = screen.getmaxyx()
@@ -82,8 +96,8 @@ def main(screen):
     for i in range(1, 11):
         curses.init_pair(i, curses_colors[i], curses.COLOR_BLACK) 
 
-    game = Game(x, y)
     snake = Snake.random_init(x, y)
+    game = Game(x, y, [snake], log=log)
     game.update_fruits()
     direction = None
 
@@ -95,9 +109,10 @@ def main(screen):
         screen.border(0)
         direction = game.check_input(screen)
         snake.update(direction)
+        game.check_collisions()
+        game.update_fruits()
         screen.refresh()
         curses.napms(50)
-    print("Ende")
 
 
 if __name__ == "__main__":
