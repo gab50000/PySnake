@@ -3,9 +3,9 @@ import random
 from collections import deque
 
 
-curses_colors = [curses.COLOR_WHITE, curses.COLOR_CYAN, curses.COLOR_BLUE, curses.COLOR_GREEN,
+curses_colors = (curses.COLOR_WHITE, curses.COLOR_CYAN, curses.COLOR_BLUE, curses.COLOR_GREEN,
                  curses.COLOR_YELLOW, curses.COLOR_MAGENTA, curses.COLOR_RED, curses.COLOR_RED,
-                 curses.COLOR_RED, curses.COLOR_RED, curses.COLOR_RED]
+                 curses.COLOR_RED, curses.COLOR_RED, curses.COLOR_RED)
 
 
 class Game:
@@ -117,16 +117,17 @@ class Snake:
 
 
 def main(screen):
-    log = open("log", "w")
     curses.curs_set(0)
     screen.nodelay(True)
     y, x = screen.getmaxyx()
+    # Reduce y-size by one to avoid curses scroll problems 
+    y -= 1
 
     for i in range(1, 11):
         curses.init_pair(i, curses_colors[i], curses.COLOR_BLACK) 
 
     snake = Snake.random_init(x, y)
-    game = Game(x, y, [snake], log=log)
+    game = Game(x, y, [snake])
     game.update_fruits()
     direction = None
 
