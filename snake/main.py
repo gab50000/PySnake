@@ -78,7 +78,7 @@ class Snake:
     @classmethod
     def random_init(self, width, height):
         start_direction = "N O S W".split()[random.randint(0, 3)]
-        x, y = random.randint(1, width -1), random.randint(1, height - 1)
+        x, y = random.randint(1, width - 1), random.randint(1, height - 1)
         return Snake(x, y, width, height, start_direction)
 
     def update(self, direction):
@@ -120,11 +120,11 @@ def main(screen):
     curses.curs_set(0)
     screen.nodelay(True)
     y, x = screen.getmaxyx()
-    # Reduce y-size by one to avoid curses scroll problems 
+    # Reduce y-size by one to avoid curses scroll problems
     y -= 1
 
     for i in range(1, 11):
-        curses.init_pair(i, curses_colors[i], curses.COLOR_BLACK) 
+        curses.init_pair(i, curses_colors[i], curses.COLOR_BLACK)
 
     snake = Snake.random_init(x, y)
     game = Game(x, y, [snake])
