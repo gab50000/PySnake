@@ -14,11 +14,15 @@ class Game:
         self.snakes = snakes
         self.width, self.height = width, height
         self.log = log
+        self.number_of_fruits = 10
 
     def update_fruits(self):
-        if not self.fruits:
-            new_x, new_y = random.randint(1, self.width - 1), random.randint(1, self.height - 1)
-            self.fruits.append((new_x, new_y))
+        while True:
+            if len(self.fruits) < self.number_of_fruits:
+                new_x, new_y = random.randint(1, self.width - 1), random.randint(1, self.height - 1)
+                self.fruits.append((new_x, new_y))
+            else:
+                break
 
     def draw(self, screen):
         for x, y in self.fruits:
