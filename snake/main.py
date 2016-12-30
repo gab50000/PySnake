@@ -168,6 +168,39 @@ def main(screen):
             break
 
 
+def nn_training(screen):
+    curses.curs_set(0)
+    screen.nodelay(True)
+    y, x = screen.getmaxyx()
+    y, x = min(y - 1, 100), min(x, 100)
+
+    for i in range(1, 11):
+        curses.init_pair(i, curses_colors[i], curses.COLOR_BLACK)
+
+    net = FFN(y*x, 100, 4)
+    directions = "N O S W".split()
+
+    snake = Snake.random_init(x, y)
+    game = Game(x, y, [snake], max_number_of_fruits=10)
+    game.update_fruits()
+
+    while 1:
+        screen.clear()
+        game.draw(screen)
+        snake.draw(screen)
+        state = game.return_state_array()
+
+        direction = directions[np.argmax(net.prop(state.ravel()))]
+        snake.update(direction)
+        game_over = game.check_collisions()
+        game.update_fruits()
+        screen.refresh()
+        curses.napms(200)
+
+        if game_over:
+            break
+
+
 if __name__ == "__main__":
-    curses.wrapper(main)
+    curses.wrapper(nn_training)
     print("Vorbei!")
