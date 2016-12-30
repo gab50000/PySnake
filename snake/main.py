@@ -149,9 +149,8 @@ def main(screen):
         curses.init_pair(i, curses_colors[i], curses.COLOR_BLACK)
 
     snake = Snake.random_init(x, y)
-    game = Game(x, y, [snake])
+    game = Game(x, y, [snake], max_number_of_fruits=10)
     game.update_fruits()
-    direction = None
 
     while 1:
         screen.clear()
