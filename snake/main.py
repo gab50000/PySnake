@@ -1,6 +1,9 @@
 import curses
 import random
 from collections import deque
+from q_learning import FFN
+
+import numpy as np
 
 
 curses_colors = (curses.COLOR_WHITE, curses.COLOR_CYAN, curses.COLOR_BLUE, curses.COLOR_GREEN,
@@ -9,16 +12,17 @@ curses_colors = (curses.COLOR_WHITE, curses.COLOR_CYAN, curses.COLOR_BLUE, curse
 
 
 class Game:
-    def __init__(self, width, height, snakes, *, log=None):
+    def __init__(self, width, height, snakes, *, max_number_of_fruits=1, log=None):
         self.fruits = []
         self.snakes = snakes
         self.width, self.height = width, height
         self.log = log
-        self.number_of_fruits = 10
+        self.max_number_of_fruits = max_number_of_fruits
 
     def update_fruits(self):
+        """Add fruits to the game until max_number_of_fruits is reached."""
         while True:
-            if len(self.fruits) < self.number_of_fruits:
+            if len(self.fruits) < self.max_number_of_fruits:
                 new_x, new_y = random.randint(1, self.width - 1), random.randint(1, self.height - 1)
                 self.fruits.append((new_x, new_y))
             else:
