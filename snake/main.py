@@ -75,6 +75,20 @@ class Game:
         for snk in snakes_to_be_deleted:
             self.snakes.pop(snk)
 
+    def return_state_array(self):
+        """Return array of current state.
+        Snake bodies are encoded as ones, snake heads as twos,
+        fruits are 3s"""
+        state = np.zeros((self.width, self.height))
+        for snake in self.snakes:
+            for i in range(len(snake.coordinates) - 1):
+                x, y = snake.coordinates[i]
+                state[x, y] = 1
+            state[snake.coordinates[-1]] = 2
+
+        for x, y in self.fruits:
+           state[x, y] = 3
+        return state
 
 class Snake:
     def __init__(self, x, y, max_x, max_y, direction):
