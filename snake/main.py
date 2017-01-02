@@ -1,7 +1,7 @@
+from collections import deque
 import curses
 import random
-from collections import deque
-from q_learning import FFN
+import sys
 
 import numpy as np
 
