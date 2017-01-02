@@ -138,6 +138,23 @@ class Snake:
             screen.addstr(y, x, "X", curses.color_pair(3))
 
 
+class NeuroSnake(Snake):
+    def __init__(self, x, y, max_x, max_y, direction):
+        super().__init__(x, y, max_x, max_y, direction)
+        input_size = max_x * max_y
+        hidden_size = input_size
+        output_size = 4
+        self.brain = FFN(input_size, hidden_size, output_size)
+
+        self.fruits_eaten = 0
+        self.age = 0
+
+    def decide_direction(self, state):
+        direction = ("N", "O", "S", "W")[np.argmax(self.brain.prop(state))]
+        self.update(direction)
+        self.age += 1
+
+
 def main(screen):
     curses.curs_set(0)
     screen.nodelay(True)
