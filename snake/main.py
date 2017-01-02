@@ -5,6 +5,8 @@ import sys
 
 import numpy as np
 
+from q_learning import FFN
+
 
 curses_colors = (curses.COLOR_WHITE, curses.COLOR_CYAN, curses.COLOR_BLUE, curses.COLOR_GREEN,
                  curses.COLOR_YELLOW, curses.COLOR_MAGENTA, curses.COLOR_RED, curses.COLOR_RED,
@@ -62,18 +64,16 @@ class Game:
                 if s_idx != s2_idx:
                     for x2s, y2s in s2.coordinates:
                         if (x_s, y_s) == (x2s, y2s):
-                            snakes_to_be_deleted.append(s_idx)
-                            return True
+                            snakes_to_be_deleted.append(s)
                 else:
                     for x2s, y2s in list(s2.coordinates)[:-1]:
                         if (x_s, y_s) == (x2s, y2s):
-                            snakes_to_be_deleted.append(s_idx)
-                            return True
+                            snakes_to_be_deleted.append(s)
 
         for tbd in fruits_to_be_deleted:
             self.fruits.pop(tbd)
         for snk in snakes_to_be_deleted:
-            self.snakes.pop(snk)
+            self.snakes.remove(snk)
 
     def return_state_array(self):
         """Return array of current state.
@@ -88,7 +88,8 @@ class Game:
 
         for x, y in self.fruits:
            state[x, y] = 3
-        return state
+        return state.flat
+
 
 class Snake:
     def __init__(self, x, y, max_x, max_y, direction):
@@ -168,6 +169,7 @@ def main(screen):
     snake = Snake.random_init(x, y)
     game = Game(x, y, [snake], max_number_of_fruits=10)
     game.update_fruits()
+    game_over = False
 
     while 1:
         screen.clear()
@@ -176,7 +178,9 @@ def main(screen):
 
         direction = game.check_input(screen)
         snake.update(direction)
-        game_over = game.check_collisions()
+        game.check_collisions()
+        if not game.snakes:
+            game_over = True
         game.update_fruits()
         screen.refresh()
         curses.napms(70)
@@ -194,22 +198,28 @@ def nn_training(screen):
     for i in range(1, 11):
         curses.init_pair(i, curses_colors[i], curses.COLOR_BLACK)
 
-    net = FFN(y*x, 100, 4)
-    directions = "N O S W".split()
+    number_of_snakes = 10
 
-    snake = Snake.random_init(x, y)
-    game = Game(x, y, [snake], max_number_of_fruits=10)
+    snakes = []
+    for i in range(number_of_snakes):
+        xx, yy = np.random.randint(x), np.random.randint(y)
+        direction = ("N", "O", "S", "W")[np.random.randint(4)]
+        snakes.append(NeuroSnake(xx, yy, x, y, direction))
+
+    game = Game(x, y, snakes, max_number_of_fruits=10)
     game.update_fruits()
+    game_over = False
 
     while 1:
         screen.clear()
         game.draw(screen)
-        snake.draw(screen)
         state = game.return_state_array()
-
-        direction = directions[np.argmax(net.prop(state.ravel()))]
-        snake.update(direction)
-        game_over = game.check_collisions()
+        for snake in snakes:
+            snake.draw(screen)
+            snake.decide_direction(state)
+        game.check_collisions()
+        if not game.snakes:
+            game_over = True
         game.update_fruits()
         screen.refresh()
         curses.napms(200)
@@ -219,5 +229,8 @@ def nn_training(screen):
 
 
 if __name__ == "__main__":
-    curses.wrapper(nn_training)
+    if len(sys.argv) > 1 and sys.argv[1] == "neuro":
+        curses.wrapper(nn_training)
+    else:
+        curses.wrapper(main)
     print("Vorbei!")
