@@ -25,8 +25,11 @@ def q_learning_update(q_old, q_next_estimate, reward, discount, learning_rate):
 
 
 class FFN:
-    def __init__(self, in_size, hl_size, out_size):
-        self.dna = np.random.randn((in_size + 1) * hl_size + (hl_size + 1) * out_size)
+    def __init__(self, in_size, hl_size, out_size, dna=None):
+        if dna:
+            self.dna = dna
+        else:
+            self.dna = np.random.randn((in_size + 1) * hl_size + (hl_size + 1) * out_size)
         self.W1 = self.dna[:(in_size + 1) * hl_size].reshape((in_size + 1, hl_size))
         self.W1 /= self.W1.size
         self.W2 = self.dna[(in_size + 1) * hl_size:].reshape((hl_size + 1, out_size))

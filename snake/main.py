@@ -14,12 +14,16 @@ curses_colors = (curses.COLOR_WHITE, curses.COLOR_CYAN, curses.COLOR_BLUE, curse
 
 
 class Game:
-    def __init__(self, width, height, snakes, *, max_number_of_fruits=1, log=None):
+    def __init__(self, width, height, snakes, *, max_number_of_fruits=1, max_number_of_snakes=1,
+                 log=None):
         self.fruits = []
+        self.snake_pool = []
+        self.snake_pool += snakes
         self.snakes = snakes
         self.width, self.height = width, height
         self.log = log
         self.max_number_of_fruits = max_number_of_fruits
+        self.max_number_of_snakes = max_number_of_snakes
 
     def update_fruits(self):
         """Add fruits to the game until max_number_of_fruits is reached."""
@@ -90,6 +94,18 @@ class Game:
            state[x, y] = 3
         return state.flat
 
+    def create_new_snakes(self):
+        if len(self.snakes) < self.max_number_of_snakes:
+            self.snake_pool.sort(key=lambda x:x.fitness())
+            fitness_cumsum = np.cumsum([s.fitness() for s in self.snake_pool])
+        while len(self.snakes) < self.max_number_of_snakes:
+            s1 = self.snake_pool[np.searchsorted(fitness_cumsum,
+                                                 np.random.randint(fitness_cumsum[-1]))]
+            s2 = self.snake_pool[np.searchsorted(fitness_cumsum,
+                                                 np.random.randint(fitness_cumsum[-1]))]
+            new_snake = NeuroSnake.from_parents(self.width, self.height, s1, s2, 0.3, 0.1)
+            self.snake_pool.append(new_snake)
+            self.snakes.append(new_snake)
 
 class Snake:
     def __init__(self, x, y, max_x, max_y, direction):
@@ -99,10 +115,10 @@ class Snake:
         self.length = 1
 
     @classmethod
-    def random_init(self, width, height):
+    def random_init(cls, width, height):
         start_direction = "N O S W".split()[random.randint(0, 3)]
         x, y = random.randint(1, width - 1), random.randint(1, height - 1)
-        return Snake(x, y, width, height, start_direction)
+        return cls(x, y, width, height, start_direction)
 
     def update(self, direction):
         if direction:
@@ -155,6 +171,28 @@ class NeuroSnake(Snake):
         self.update(direction)
         self.age += 1
 
+    @classmethod
+    def from_parents(cls, width, height, snake1, snake2, mutation_rate, mutation_scale):
+        dna1 = snake1.brain.dna
+        dna2 = snake2.brain.dna
+        new_dna = np.empty(dna1.shape)
+        mask = np.random.randint(2, size=dna1.shape, dtype=bool)
+        new_dna[mask] = dna1[mask]
+        new_dna[~mask] = dna2[~mask]
+
+        mask[:] = 0
+        number_of_mutations = int(mutation_rate * new_dna.size)
+        mask[:number_of_mutations] = 1
+        np.random.shuffle(mask)
+        new_dna[mask] += np.random.normal(0, mutation_scale)
+
+        new_snake = cls.random_init(width, height)
+        new_snake.brain.dna = new_dna
+        return new_snake
+
+    def fitness(self):
+        return self.age + 3 * self.length
+
 
 def main(screen):
     curses.curs_set(0)
@@ -206,7 +244,7 @@ def nn_training(screen):
         direction = ("N", "O", "S", "W")[np.random.randint(4)]
         snakes.append(NeuroSnake(xx, yy, x, y, direction))
 
-    game = Game(x, y, snakes, max_number_of_fruits=10)
+    game = Game(x, y, snakes, max_number_of_fruits=10, max_number_of_snakes=10)
     game.update_fruits()
     game_over = False
 
@@ -221,9 +259,9 @@ def nn_training(screen):
         if not game.snakes:
             game_over = True
         game.update_fruits()
+        game.create_new_snakes()
         screen.refresh()
-        curses.napms(200)
-
+        curses.napms(5)
         if game_over:
             break
 
