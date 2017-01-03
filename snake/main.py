@@ -17,13 +17,12 @@ class Game:
     def __init__(self, width, height, snakes, *, max_number_of_fruits=1, max_number_of_snakes=1,
                  log=None):
         self.fruits = []
-        self.snake_pool = []
-        self.snake_pool += snakes
         self.snakes = snakes
         self.width, self.height = width, height
         self.log = log
         self.max_number_of_fruits = max_number_of_fruits
         self.max_number_of_snakes = max_number_of_snakes
+        self.rewards = [0 for s in snakes]
 
     def update_fruits(self):
         """Add fruits to the game until max_number_of_fruits is reached."""
@@ -63,21 +62,28 @@ class Game:
                 if (x_s, y_s) == (x_f, y_f):
                     s.length += 2
                     fruits_to_be_deleted.append(fruit_idx)
+                    self.rewards[s_idx] = 10
             # Check snake collisions
             for s2_idx, s2 in enumerate(self.snakes):
                 if s_idx != s2_idx:
                     for x2s, y2s in s2.coordinates:
                         if (x_s, y_s) == (x2s, y2s):
                             snakes_to_be_deleted.append(s)
+                            self.rewards[s_idx] = -10
                 else:
                     for x2s, y2s in list(s2.coordinates)[:-1]:
                         if (x_s, y_s) == (x2s, y2s):
                             snakes_to_be_deleted.append(s)
+                            self.rewards[s_idx] = -10
 
         for tbd in fruits_to_be_deleted:
             self.fruits.pop(tbd)
         for snk in snakes_to_be_deleted:
             self.snakes.remove(snk)
+
+    def return_reward(self, snake_idx):
+        return self.rewards[snake_idx]
+
 
     def return_state_array(self):
         """Return array of current state.
@@ -171,27 +177,8 @@ class NeuroSnake(Snake):
         self.update(direction)
         self.age += 1
 
-    @classmethod
-    def from_parents(cls, width, height, snake1, snake2, mutation_rate, mutation_scale):
-        dna1 = snake1.brain.dna
-        dna2 = snake2.brain.dna
-        new_dna = np.empty(dna1.shape)
-        mask = np.random.randint(2, size=dna1.shape, dtype=bool)
-        new_dna[mask] = dna1[mask]
-        new_dna[~mask] = dna2[~mask]
-
-        mask[:] = 0
-        number_of_mutations = int(mutation_rate * new_dna.size)
-        mask[:number_of_mutations] = 1
-        np.random.shuffle(mask)
-        new_dna[mask] += np.random.normal(0, mutation_scale)
-
-        new_snake = cls.random_init(width, height)
-        new_snake.brain.dna = new_dna
-        return new_snake
-
-    def fitness(self):
-        return self.age + 3 * self.length
+    def return_direction_estimations(self, state):
+        return self.brain.prop(state)
 
 
 def main(screen):
@@ -236,34 +223,44 @@ def nn_training(screen):
     for i in range(1, 11):
         curses.init_pair(i, curses_colors[i], curses.COLOR_BLACK)
 
-    number_of_snakes = 10
+    number_of_snakes = 1
+    number_of_epochs = 100
 
-    snakes = []
-    for i in range(number_of_snakes):
-        xx, yy = np.random.randint(x), np.random.randint(y)
-        direction = ("N", "O", "S", "W")[np.random.randint(4)]
-        snakes.append(NeuroSnake(xx, yy, x, y, direction))
+    for i in range(number_of_epochs):
+        snakes = []
+        for i in range(number_of_snakes):
+            xx, yy = np.random.randint(x), np.random.randint(y)
+            direction = ("N", "O", "S", "W")[np.random.randint(4)]
+            snakes.append(NeuroSnake(xx, yy, x, y, direction))
 
-    game = Game(x, y, snakes, max_number_of_fruits=10, max_number_of_snakes=10)
-    game.update_fruits()
-    game_over = False
+        snake = snakes[0]
 
-    while 1:
-        screen.clear()
-        game.draw(screen)
-        state = game.return_state_array()
-        for snake in snakes:
-            snake.draw(screen)
-            snake.decide_direction(state)
-        game.check_collisions()
-        if not game.snakes:
-            game_over = True
+        game = Game(x, y, snakes, max_number_of_fruits=10, max_number_of_snakes=10)
         game.update_fruits()
-        game.create_new_snakes()
-        screen.refresh()
-        curses.napms(5)
-        if game_over:
-            break
+        game_over = False
+
+        while 1:
+            screen.clear()
+            game.draw(screen)
+            state = game.return_state_array()
+            snake.draw(screen)
+            direction_evals = snake.return_direction_estimations(state)
+            #screen.addstr(0, 0, " ".join(map(str, direction_evals)))
+            direction = ("N", "O", "S", "W")[np.argmax(np.random.multinomial(1, direction_evals))]
+            screen.addstr(0, 0, str(direction))
+            snake.update(direction)
+            new_state = game.return_state_array()
+            game.check_collisions()
+            reward = game.return_reward(0)
+            next_action
+            snake.backprop(state, )
+            if not game.snakes:
+                game_over = True
+            game.update_fruits()
+            screen.refresh()
+            curses.napms(100)
+            if game_over:
+                break
 
 
 if __name__ == "__main__":

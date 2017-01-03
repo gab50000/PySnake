@@ -34,12 +34,21 @@ class FFN:
         self.W1 /= self.W1.size
         self.W2 = self.dna[(in_size + 1) * hl_size:].reshape((hl_size + 1, out_size))
         self.W2 /= self.W2.size
+        self.cache = dict()
 
     def prop(self, x1):
         x2 = np.maximum(0, x1 @ self.W1[:-1] + self.W1[-1])
         x3 = x2 @ self.W2[:-1] + self.W2[-1]
         softmax_x3 = np.exp(x3 - x3.max(axis=-1))
         softmax_x3 /= softmax_x3.sum(axis=-1)
+        return softmax_x3
+
+    def prop_and_remember(self, x1):
+        x2 = np.maximum(0, x1 @ self.W1[:-1] + self.W1[-1])
+        x3 = x2 @ self.W2[:-1] + self.W2[-1]
+        softmax_x3 = np.exp(x3 - x3.max(axis=-1))
+        softmax_x3 /= softmax_x3.sum(axis=-1)
+        self.cache["x2"] = x2
         return softmax_x3
 
     def backprop(self, training_input, training_output, gamma=1.0, verbose=False):
@@ -84,3 +93,25 @@ class FFN:
         self.W2 += -gamma * dW2.sum(axis=0)
 
         return loss.mean()
+
+    def backprop_value(self, state, action, loss, gamma=1.0, verbose=False):
+        """Do backpropagation by inserting a value for loss and backpropping it."""
+
+
+        dW1 = np.empty(self.W1.shape)
+        dW2 = np.empty(self.W2.shape)
+
+        dx3 = loss
+        dx3[training_output] -= 1
+        # W2 has shape (x2.shape[1] + 1, x3.shape[1])
+        dW2[:-1] = self.cache["x2"][:, None] * dx3[None, :]
+        dW2[-1] = dx3
+        # Do matrix multiplication for each training value
+        dx2 = np.einsum("jk, ik -> ij", self.W2[: -1], dx3)
+        dx2[self.cache["x2"] == 0] = 0
+        # W1 has shape (x_train.shape[1], x2.shape[1])
+        dW1[:-1] = state[:, None] * dx2[None, :]
+        dW1[-1] = dx2
+
+        self.W1 += -gamma * dW1
+        self.W2 += -gamma * dW2
