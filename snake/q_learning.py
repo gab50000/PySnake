@@ -34,7 +34,10 @@ class FFN:
         self.W1 /= self.W1.size
         self.W2 = self.dna[(in_size + 1) * hl_size:].reshape((hl_size + 1, out_size))
         self.W2 /= self.W2.size
-        self.cache = dict()
+
+        self.inputs = []
+        self.hiddens = []
+        self.outputs = []
 
     def prop(self, x1):
         x2 = np.maximum(0, x1 @ self.W1[:-1] + self.W1[-1])
@@ -48,8 +51,16 @@ class FFN:
         x3 = x2 @ self.W2[:-1] + self.W2[-1]
         softmax_x3 = np.exp(x3 - x3.max(axis=-1))
         softmax_x3 /= softmax_x3.sum(axis=-1)
-        self.cache["x2"] = x2
+
+        self.inputs.append(x1)
+        self.hiddens.append(x2)
+        self.outputs.append(softmax_x3)
         return softmax_x3
+
+    def clear_memory(self):
+        self.inputs = []
+        self.hiddens = []
+        self.outputs = []
 
     def backprop(self, training_input, training_output, gamma=1.0, verbose=False):
         """Do backpropagation by calculating the gradient of the loss function

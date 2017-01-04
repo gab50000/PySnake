@@ -87,14 +87,23 @@ class Game:
 
     def return_state_array(self):
         """Return array of current state.
-        Snake bodies are encoded as ones, snake heads as twos,
-        fruits are 3s"""
+        The game board is encoded as follows:
+        Snake body: 1
+        Snake head: 2
+        Fruit : 3
+        Snake head on fruit: 4"""
+
         state = np.zeros((self.width, self.height))
         for snake in self.snakes:
             for i in range(len(snake.coordinates) - 1):
                 x, y = snake.coordinates[i]
                 state[x, y] = 1
-            state[snake.coordinates[-1]] = 2
+            head_coord = snake.coordinates[-1]
+            if head_coord in self.fruits:
+                state[snake.coordinates[-1]] = 4
+                self.fruits.remove(head_coord)
+            else:
+                state[snake.coordinates[-1]] = 2
 
         for x, y in self.fruits:
            state[x, y] = 3
@@ -178,7 +187,7 @@ class NeuroSnake(Snake):
         self.age += 1
 
     def return_direction_estimations(self, state):
-        return self.brain.prop(state)
+        return self.brain.prop_and_remember(state)
 
 
 def main(screen):
@@ -224,43 +233,44 @@ def nn_training(screen):
         curses.init_pair(i, curses_colors[i], curses.COLOR_BLACK)
 
     number_of_snakes = 1
-    number_of_epochs = 100
+    number_of_epochs = 10
+    game_steps = 200
 
-    for i in range(number_of_epochs):
+    net = FFN(x * y, x * y, 4)
+
+
+    for epoch in range(number_of_epochs):
         snakes = []
         for i in range(number_of_snakes):
             xx, yy = np.random.randint(x), np.random.randint(y)
             direction = ("N", "O", "S", "W")[np.random.randint(4)]
-            snakes.append(NeuroSnake(xx, yy, x, y, direction))
+            snakes.append(Snake(xx, yy, x, y, direction))
 
         snake = snakes[0]
+        net.clear_memory()
 
         game = Game(x, y, snakes, max_number_of_fruits=10, max_number_of_snakes=10)
         game.update_fruits()
         game_over = False
 
-        while 1:
+        for gs in range(game_steps):
             screen.clear()
             game.draw(screen)
             state = game.return_state_array()
             snake.draw(screen)
-            direction_evals = snake.return_direction_estimations(state)
-            #screen.addstr(0, 0, " ".join(map(str, direction_evals)))
+            screen.addstr(0, 0, "Epoch {}, Step {}".format(epoch, gs))
+            direction_evals = net.prop_and_remember(state)
             direction = ("N", "O", "S", "W")[np.argmax(np.random.multinomial(1, direction_evals))]
-            screen.addstr(0, 0, str(direction))
             snake.update(direction)
-            new_state = game.return_state_array()
             game.check_collisions()
-            reward = game.return_reward(0)
-            next_action
-            snake.backprop(state, )
             if not game.snakes:
                 game_over = True
             game.update_fruits()
             screen.refresh()
-            curses.napms(100)
+            curses.napms(1)
             if game_over:
                 break
+
 
 
 if __name__ == "__main__":
