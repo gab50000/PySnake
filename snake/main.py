@@ -56,12 +56,13 @@ class Game:
         snakes_to_be_deleted = []
 
         for s_idx, s in enumerate(self.snakes):
+            self.rewards[s_idx] = 0
             x_s, y_s = s.coordinates[-1]
             # Check fruit collision
-            for fruit_idx, (x_f, y_f) in enumerate(self.fruits):
-                if (x_s, y_s) == (x_f, y_f):
+            for fruit in self.fruits:
+                if (x_s, y_s) == fruit:
                     s.length += 2
-                    fruits_to_be_deleted.append(fruit_idx)
+                    fruits_to_be_deleted.append(fruit)
                     self.rewards[s_idx] = 10
             # Check snake collisions
             for s2_idx, s2 in enumerate(self.snakes):
@@ -77,7 +78,7 @@ class Game:
                             self.rewards[s_idx] = -10
 
         for tbd in fruits_to_be_deleted:
-            self.fruits.pop(tbd)
+            self.fruits.remove(tbd)
         for snk in snakes_to_be_deleted:
             self.snakes.remove(snk)
 
