@@ -228,7 +228,7 @@ def nn_training(screen):
     curses.curs_set(0)
     screen.nodelay(True)
     y, x = screen.getmaxyx()
-    y, x = min(y - 1, 50), min(x, 50)
+    y, x = min(y - 1, 20), min(x, 20)
 
     for i in range(1, 11):
         curses.init_pair(i, curses_colors[i], curses.COLOR_BLACK)
@@ -253,7 +253,7 @@ def nn_training(screen):
         rewards = []
         actions = []
 
-        game = Game(x, y, snakes, max_number_of_fruits=50, max_number_of_snakes=10)
+        game = Game(x, y, snakes, max_number_of_fruits=10, max_number_of_snakes=10)
         game.update_fruits()
         game_over = False
 
