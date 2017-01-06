@@ -123,7 +123,6 @@ class FFN:
         dW2 = np.empty((batch_size, *self.W2.shape))
 
         dx3 = probs[range(batch_size), actions, None] - rewards[:, None]
-        np.save("dx3", dx3)
 
         # W2 has shape (x2.shape[1] + 1, x3.shape[1])
         dW2[:, :-1] = hidden[:, :, None] * dx3[:, None, :]
