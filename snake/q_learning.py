@@ -1,3 +1,5 @@
+import pickle
+
 import numpy as np
 
 
@@ -62,6 +64,11 @@ class FFN:
         self.hiddens = []
         self.outputs = []
 
+    def save_state(self):
+        weights = {"W1": self.W1, "W2": self.W2}
+        with open("weights", "wb") as f:
+            pickle.dump(weights, f)
+
     def backprop(self, training_input, training_output, gamma=1.0, verbose=False):
         """Do backpropagation by calculating the gradient of the loss function
         with respect to the weights W1 and W2.
@@ -105,24 +112,33 @@ class FFN:
 
         return loss.mean()
 
-    def backprop_value(self, state, action, loss, gamma=1.0, verbose=False):
+    def backprop_value(self, actions, rewards, gamma=1.0, verbose=False):
         """Do backpropagation by inserting a value for loss and backpropping it."""
+        batch_size = len(rewards)
+        hidden = np.array(self.hiddens)
+        state = np.array(self.inputs)
+        probs = np.array(self.outputs)
 
+        dW1 = np.empty((batch_size, *self.W1.shape))
+        dW2 = np.empty((batch_size, *self.W2.shape))
 
-        dW1 = np.empty(self.W1.shape)
-        dW2 = np.empty(self.W2.shape)
+        dx3 = probs[range(batch_size), actions, None] - rewards[:, None]
+        np.save("dx3", dx3)
 
-        dx3 = loss
-        dx3[training_output] -= 1
         # W2 has shape (x2.shape[1] + 1, x3.shape[1])
-        dW2[:-1] = self.cache["x2"][:, None] * dx3[None, :]
-        dW2[-1] = dx3
+        dW2[:, :-1] = hidden[:, :, None] * dx3[:, None, :]
+        dW2[:, -1] = dx3
         # Do matrix multiplication for each training value
         dx2 = np.einsum("jk, ik -> ij", self.W2[: -1], dx3)
-        dx2[self.cache["x2"] == 0] = 0
+        dx2[hidden == 0] = 0
         # W1 has shape (x_train.shape[1], x2.shape[1])
-        dW1[:-1] = state[:, None] * dx2[None, :]
-        dW1[-1] = dx2
+        dW1[:, :-1] = state[:, :, None] * dx2[:, None, :]
+        dW1[:, -1] = dx2
 
-        self.W1 += -gamma * dW1
-        self.W2 += -gamma * dW2
+        self.W1 += -gamma * dW1.sum(axis=0)
+        self.W2 += -gamma * dW2.sum(axis=0)
+
+        self.inputs = []
+        self.hiddens = []
+        self.outputs = []
+

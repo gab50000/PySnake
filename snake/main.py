@@ -108,7 +108,7 @@ class Game:
 
         for x, y in self.fruits:
            state[x, y] = 3
-        return state.flat
+        return state.flatten()
 
     def create_new_snakes(self):
         if len(self.snakes) < self.max_number_of_snakes:
@@ -202,7 +202,7 @@ def main(screen):
         curses.init_pair(i, curses_colors[i], curses.COLOR_BLACK)
 
     snake = Snake.random_init(x, y)
-    game = Game(x, y, [snake], max_number_of_fruits=10)
+    game = Game(x, y, [snake], max_number_of_fruits=100)
     game.update_fruits()
     game_over = False
 
@@ -228,17 +228,17 @@ def nn_training(screen):
     curses.curs_set(0)
     screen.nodelay(True)
     y, x = screen.getmaxyx()
-    y, x = min(y - 1, 100), min(x, 100)
+    y, x = min(y - 1, 50), min(x, 50)
 
     for i in range(1, 11):
         curses.init_pair(i, curses_colors[i], curses.COLOR_BLACK)
 
     number_of_snakes = 1
-    number_of_epochs = 10
+    number_of_epochs = 100
     game_steps = 200
+    gamma = 0.9  # discount factor
 
     net = FFN(x * y, x * y, 4)
-
 
     for epoch in range(number_of_epochs):
         snakes = []
@@ -250,7 +250,10 @@ def nn_training(screen):
         snake = snakes[0]
         net.clear_memory()
 
-        game = Game(x, y, snakes, max_number_of_fruits=10, max_number_of_snakes=10)
+        rewards = []
+        actions = []
+
+        game = Game(x, y, snakes, max_number_of_fruits=50, max_number_of_snakes=10)
         game.update_fruits()
         game_over = False
 
@@ -259,11 +262,13 @@ def nn_training(screen):
             game.draw(screen)
             state = game.return_state_array()
             snake.draw(screen)
-            screen.addstr(0, 0, "Epoch {}, Step {}".format(epoch, gs))
+            screen.addstr(0, 0, "Epoch {}, Step {}, Reward {}".format(epoch, gs, rewards[-1:]))
             direction_evals = net.prop_and_remember(state)
-            direction = ("N", "O", "S", "W")[np.argmax(np.random.multinomial(1, direction_evals))]
-            snake.update(direction)
+            direction = np.argmax(np.random.multinomial(1, direction_evals))
+            actions.append(direction)
+            snake.update(("N", "O", "S", "W")[direction])
             game.check_collisions()
+            rewards.append(game.return_reward(0))
             if not game.snakes:
                 game_over = True
             game.update_fruits()
@@ -271,6 +276,20 @@ def nn_training(screen):
             curses.napms(1)
             if game_over:
                 break
+        else:
+            # at least it didn't die, so give it a small reward
+            rewards[-1] = 1
+        R = 0
+        discounted_reward = np.zeros_like(rewards, dtype=float)
+        for t in reversed(range(discounted_reward.shape[0])):
+            R = gamma * R + rewards[t]
+            discounted_reward[t] = R
+        discounted_reward -= discounted_reward.mean()
+        discounted_reward /= np.std(discounted_reward)
+
+        net.backprop_value(actions, discounted_reward)
+
+    net.save_state()
 
 
 
