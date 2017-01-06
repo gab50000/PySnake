@@ -277,12 +277,13 @@ def nn_training(screen):
                 game_over = True
             game.update_fruits()
             screen.refresh()
-            curses.napms(1)
+            curses.napms(10)
             if game_over:
                 break
-        else:
-            # at least it didn't die, so give it a small reward
-            rewards[-1] = 1
+        # Give small penalty if no fruits at all have been
+        # collected
+        if all(x == 0 for x in rewards):
+            rewards[-1] += -5
         R = 0
         discounted_reward = np.zeros_like(rewards, dtype=float)
         for t in reversed(range(discounted_reward.shape[0])):
