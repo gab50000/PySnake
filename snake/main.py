@@ -70,12 +70,12 @@ class Game:
                     for x2s, y2s in s2.coordinates:
                         if (x_s, y_s) == (x2s, y2s):
                             snakes_to_be_deleted.append(s)
-                            self.rewards[s_idx] = -10
+                            self.rewards[s_idx] = -100
                 else:
                     for x2s, y2s in list(s2.coordinates)[:-1]:
                         if (x_s, y_s) == (x2s, y2s):
                             snakes_to_be_deleted.append(s)
-                            self.rewards[s_idx] = -10
+                            self.rewards[s_idx] = -100
 
         for tbd in fruits_to_be_deleted:
             self.fruits.remove(tbd)
