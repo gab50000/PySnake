@@ -237,6 +237,7 @@ def nn_training(screen):
     number_of_epochs = 100
     game_steps = 200
     gamma = 0.9  # discount factor
+    temperature = 20  # Increases exploration
 
     net = FFN(x * y, x * y, 4)
 
@@ -262,8 +263,11 @@ def nn_training(screen):
             game.draw(screen)
             state = game.return_state_array()
             snake.draw(screen)
-            screen.addstr(0, 0, "Epoch {}, Step {}, Reward {}".format(epoch, gs, rewards[-1:]))
+            #screen.addstr(0, 0, "Epoch {}, Step {}, Reward {}".format(epoch, gs, rewards[-1:]))
             direction_evals = net.prop_and_remember(state)
+            screen.addstr(0, 0, "Probs: {}".format(direction_evals))
+            direction_evals = np.exp(np.log(direction_evals) / temperature)
+            direction_evals /= direction_evals.sum()
             direction = np.argmax(np.random.multinomial(1, direction_evals))
             actions.append(direction)
             snake.update(("N", "O", "S", "W")[direction])
