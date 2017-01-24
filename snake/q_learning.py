@@ -83,7 +83,7 @@ class FFN:
         # probability assigned by softmax is for it
         # If it is close to one, loss -> 0
         # If it is close to zero, loss -> ∞
-        loss = -np.log(probs[range(training_input.shape[0]), training_output])
+        loss = -np.log(probs[range(training_input.shape[0]), training_output]).mean()
 
         dW1 = np.empty((training_input.shape[0], *self.W1.shape))
         dW2 = np.empty((training_input.shape[0], *self.W2.shape))
@@ -97,6 +97,7 @@ class FFN:
 
         dx3 = probs
         dx3[range(training_input.shape[0]), training_output] -= 1
+        dx3 /= training_input.shape[0]
         # W2 has shape (x2.shape[1] + 1, x3.shape[1])
         dW2[:, :-1] = x2[:, :, None] * dx3[:, None, :]
         dW2[:, -1] = dx3
@@ -110,7 +111,7 @@ class FFN:
         self.W1 += -gamma * dW1.sum(axis=0)
         self.W2 += -gamma * dW2.sum(axis=0)
 
-        return loss.mean()
+        return loss
 
     def backprop_value(self, actions, rewards, gamma=1.0, verbose=False):
         """Do backpropagation by inserting a value for loss and backpropping it."""
