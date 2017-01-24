@@ -44,8 +44,8 @@ class FFN:
     def prop(self, x1):
         x2 = np.maximum(0, x1 @ self.W1[:-1] + self.W1[-1])
         x3 = x2 @ self.W2[:-1] + self.W2[-1]
-        softmax_x3 = np.exp(x3 - x3.max(axis=-1))
-        softmax_x3 /= softmax_x3.sum(axis=-1)
+        softmax_x3 = np.exp(x3 - x3.max(axis=-1, keepdims=True))
+        softmax_x3 /= softmax_x3.sum(axis=-1, keepdims=True)
         return softmax_x3
 
     def prop_and_remember(self, x1):
@@ -77,8 +77,8 @@ class FFN:
         # Forward prop
         x2 = np.maximum(0, training_input @ self.W1[:-1] + self.W1[-1])
         x3 = x2 @ self.W2[:-1] + self.W2[-1]
-        exp_scores = np.exp(x3 - x3.max(axis=-1))
-        probs = exp_scores / exp_scores.sum(axis=-1)
+        exp_scores = np.exp(x3 - x3.max(axis=-1, keepdims=True))
+        probs = exp_scores / exp_scores.sum(axis=-1, keepdims=True)
         # As training_output holds the correct action, check how high the
         # probability assigned by softmax is for it
         # If it is close to one, loss -> 0
@@ -95,7 +95,7 @@ class FFN:
         # The gradient for the wrong outputs is the difference between 0 and
         # their assigned probabilities
 
-        dx3 = loss
+        dx3 = probs
         dx3[range(training_input.shape[0]), training_output] -= 1
         # W2 has shape (x2.shape[1] + 1, x3.shape[1])
         dW2[:, :-1] = x2[:, :, None] * dx3[:, None, :]
