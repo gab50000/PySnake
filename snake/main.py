@@ -292,7 +292,7 @@ def nn_training(screen):
         discounted_reward -= discounted_reward.mean()
         discounted_reward /= np.std(discounted_reward)
 
-        net.backprop_value(actions, discounted_reward)
+        net.backprop_value(actions, discounted_reward, gamma=0.01)
 
     net.save_state()
 
