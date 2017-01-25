@@ -8,6 +8,9 @@ import numpy as np
 from q_learning import FFN
 
 
+FRUIT_REWARD = 30
+DEATH_REWARD = -50
+
 curses_colors = (curses.COLOR_WHITE, curses.COLOR_CYAN, curses.COLOR_BLUE, curses.COLOR_GREEN,
                  curses.COLOR_YELLOW, curses.COLOR_MAGENTA, curses.COLOR_RED, curses.COLOR_RED,
                  curses.COLOR_RED, curses.COLOR_RED, curses.COLOR_RED)
@@ -63,19 +66,19 @@ class Game:
                 if (x_s, y_s) == fruit:
                     s.length += 2
                     fruits_to_be_deleted.append(fruit)
-                    self.rewards[s_idx] = 10
+                    self.rewards[s_idx] = FRUIT_REWARD
             # Check snake collisions
             for s2_idx, s2 in enumerate(self.snakes):
                 if s_idx != s2_idx:
                     for x2s, y2s in s2.coordinates:
                         if (x_s, y_s) == (x2s, y2s):
                             snakes_to_be_deleted.append(s)
-                            self.rewards[s_idx] = -100
+                            self.rewards[s_idx] = DEATH_REWARD
                 else:
                     for x2s, y2s in list(s2.coordinates)[:-1]:
                         if (x_s, y_s) == (x2s, y2s):
                             snakes_to_be_deleted.append(s)
-                            self.rewards[s_idx] = -100
+                            self.rewards[s_idx] = DEATH_REWARD
 
         for tbd in fruits_to_be_deleted:
             self.fruits.remove(tbd)
@@ -282,8 +285,10 @@ def nn_training(screen):
                 break
         # Give small penalty if no fruits at all have been
         # collected
+        # Give reward for length of snake
         if all(x == 0 for x in rewards):
-            rewards[-1] += -5
+            rewards[-1] += -20
+        rewards[-1] += snake.length**2
         R = 0
         discounted_reward = np.zeros_like(rewards, dtype=float)
         for t in reversed(range(discounted_reward.shape[0])):
