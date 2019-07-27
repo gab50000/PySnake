@@ -1,5 +1,6 @@
 from collections import deque
 import curses
+from enum import Enum
 import random
 import sys
 
@@ -24,6 +25,8 @@ curses_colors = (
     curses.COLOR_RED,
     curses.COLOR_RED,
 )
+
+Direction = Enum("Direction", "NORTH EAST SOUTH WEST")
 
 
 class Game:
@@ -69,7 +72,8 @@ class Game:
             if not self.snakes:
                 game_over = True
             for snake in self.snakes:
-                snake.update(None)
+                if snake is not self.player_snake:
+                    snake.update(None)
             self.update_fruits()
 
             if game_over:
@@ -77,15 +81,12 @@ class Game:
 
     def update_fruits(self):
         """Add fruits to the game until max_number_of_fruits is reached."""
-        while True:
-            if len(self.fruits) < self.max_number_of_fruits:
-                new_x, new_y = (
-                    random.randint(1, self.width - 1),
-                    random.randint(1, self.height - 1),
-                )
-                self.fruits.append((new_x, new_y))
-            else:
-                break
+        while len(self.fruits) < self.max_number_of_fruits:
+            new_x, new_y = (
+                random.randint(1, self.width - 1),
+                random.randint(1, self.height - 1),
+            )
+            self.fruits.append((new_x, new_y))
 
     def check_collisions(self):
         fruits_to_be_deleted = []
@@ -144,23 +145,6 @@ class Game:
         for x, y in self.fruits:
             state[x, y] = 3
         return state.flatten()
-
-    def create_new_snakes(self):
-        if len(self.snakes) < self.max_number_of_snakes:
-            self.snake_pool.sort(key=lambda x: x.fitness())
-            fitness_cumsum = np.cumsum([s.fitness() for s in self.snake_pool])
-        while len(self.snakes) < self.max_number_of_snakes:
-            s1 = self.snake_pool[
-                np.searchsorted(fitness_cumsum, np.random.randint(fitness_cumsum[-1]))
-            ]
-            s2 = self.snake_pool[
-                np.searchsorted(fitness_cumsum, np.random.randint(fitness_cumsum[-1]))
-            ]
-            new_snake = NeuroSnake.from_parents(
-                self.width, self.height, s1, s2, 0.3, 0.1
-            )
-            self.snake_pool.append(new_snake)
-            self.snakes.append(new_snake)
 
 
 class Snake:
@@ -230,39 +214,6 @@ class NeuroSnake(Snake):
 
     def return_direction_estimations(self, state):
         return self.brain.prop_and_remember(state)
-
-
-def main(screen):
-    curses.curs_set(0)
-    screen.nodelay(True)
-    y, x = screen.getmaxyx()
-    # Reduce y-size by one to avoid curses scroll problems
-    y -= 1
-
-    for i in range(1, 11):
-        curses.init_pair(i, curses_colors[i], curses.COLOR_BLACK)
-
-    snake = Snake.random_init(x, y)
-    game = Game(x, y, [snake], max_number_of_fruits=100)
-    game.update_fruits()
-    game_over = False
-
-    while 1:
-        screen.clear()
-        game.draw(screen)
-        snake.draw(screen)
-
-        direction = game.check_input(screen)
-        snake.update(direction)
-        game.check_collisions()
-        if not game.snakes:
-            game_over = True
-        game.update_fruits()
-        screen.refresh()
-        curses.napms(70)
-
-        if game_over:
-            break
 
 
 def nn_training(screen):

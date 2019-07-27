@@ -58,12 +58,13 @@ class Curses(UI):
         curses.wrapper(self._loop)
 
     def _loop(self, screen):
+        y, x = screen.getmaxyx()
+        assert (
+            self.game.width <= x and self.game.height <= y
+        ), f"Wrong game dimensions {self.game.width}, {self.game.height} != {x}, {y}!"
         game = self.game
         curses.curs_set(0)
         screen.nodelay(True)
-        y, x = screen.getmaxyx()
-        # Reduce y-size by one to avoid curses scroll problems
-        y -= 1
 
         for i in range(1, 11):
             curses.init_pair(i, curses_colors[i], curses.COLOR_BLACK)
@@ -78,8 +79,16 @@ class Curses(UI):
             direction = self.check_input(screen)
 
 
+def get_screen_size(screen):
+    y, x = screen.getmaxyx()
+    return x, y
+
+
 def main():
-    game = Game(30, 20, snakes=[Snake(10, 10, 30, 20, "O")])
+    x, y = curses.wrapper(get_screen_size)
+    # Reduce y-size by one to avoid curses scroll problems
+    y -= 1
+    game = Game(x, y, player_snake=Snake(10, 10, max_x=x, max_y=y, direction="O"))
     ui = Curses(game)
     ui.run()
 
