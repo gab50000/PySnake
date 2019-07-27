@@ -1,16 +1,13 @@
 from collections import deque
 import curses
 from enum import Enum
+import logging
 import random
 import sys
 
 import numpy as np
 
-from q_learning import FFN
-
-
-FRUIT_REWARD = 30
-DEATH_REWARD = -50
+logger = logging.getLogger(__name__)
 
 curses_colors = (
     curses.COLOR_WHITE,
@@ -83,8 +80,8 @@ class Game:
         """Add fruits to the game until max_number_of_fruits is reached."""
         while len(self.fruits) < self.max_number_of_fruits:
             new_x, new_y = (
-                random.randint(1, self.width - 1),
-                random.randint(1, self.height - 1),
+                random.randint(0, self.width - 1),
+                random.randint(0, self.height - 1),
             )
             self.fruits.append((new_x, new_y))
 
@@ -93,26 +90,24 @@ class Game:
         snakes_to_be_deleted = []
 
         for s_idx, s in enumerate(self.snakes):
-            self.rewards[s_idx] = 0
             x_s, y_s = s.coordinates[-1]
             # Check fruit collision
             for fruit in self.fruits:
                 if (x_s, y_s) == fruit:
                     s.length += 2
                     fruits_to_be_deleted.append(fruit)
-                    self.rewards[s_idx] = FRUIT_REWARD
+                    self.rewards[s_idx] += 1
+                    logger.debug("Snake %s got a fruit", s_idx)
             # Check snake collisions
             for s2_idx, s2 in enumerate(self.snakes):
                 if s_idx != s2_idx:
                     for x2s, y2s in s2.coordinates:
                         if (x_s, y_s) == (x2s, y2s):
                             snakes_to_be_deleted.append(s)
-                            self.rewards[s_idx] = DEATH_REWARD
                 else:
                     for x2s, y2s in list(s2.coordinates)[:-1]:
                         if (x_s, y_s) == (x2s, y2s):
                             snakes_to_be_deleted.append(s)
-                            self.rewards[s_idx] = DEATH_REWARD
 
         for tbd in fruits_to_be_deleted:
             self.fruits.remove(tbd)
@@ -121,10 +116,6 @@ class Game:
 
     @property
     def state_array(self):
-    def return_reward(self, snake_idx):
-        return self.rewards[snake_idx]
-
-    def return_state_array(self):
         """Return array of current state.
         The game board is encoded as follows:
         Snake body: 1
