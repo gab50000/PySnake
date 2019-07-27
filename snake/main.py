@@ -11,14 +11,32 @@ from q_learning import FFN
 FRUIT_REWARD = 30
 DEATH_REWARD = -50
 
-curses_colors = (curses.COLOR_WHITE, curses.COLOR_CYAN, curses.COLOR_BLUE, curses.COLOR_GREEN,
-                 curses.COLOR_YELLOW, curses.COLOR_MAGENTA, curses.COLOR_RED, curses.COLOR_RED,
-                 curses.COLOR_RED, curses.COLOR_RED, curses.COLOR_RED)
+curses_colors = (
+    curses.COLOR_WHITE,
+    curses.COLOR_CYAN,
+    curses.COLOR_BLUE,
+    curses.COLOR_GREEN,
+    curses.COLOR_YELLOW,
+    curses.COLOR_MAGENTA,
+    curses.COLOR_RED,
+    curses.COLOR_RED,
+    curses.COLOR_RED,
+    curses.COLOR_RED,
+    curses.COLOR_RED,
+)
 
 
 class Game:
-    def __init__(self, width, height, snakes, *, max_number_of_fruits=1, max_number_of_snakes=1,
-                 log=None):
+    def __init__(
+        self,
+        width,
+        height,
+        snakes,
+        *,
+        max_number_of_fruits=1,
+        max_number_of_snakes=1,
+        log=None
+    ):
         self.fruits = []
         self.snakes = snakes
         self.width, self.height = width, height
@@ -31,7 +49,10 @@ class Game:
         """Add fruits to the game until max_number_of_fruits is reached."""
         while True:
             if len(self.fruits) < self.max_number_of_fruits:
-                new_x, new_y = random.randint(1, self.width - 1), random.randint(1, self.height - 1)
+                new_x, new_y = (
+                    random.randint(1, self.width - 1),
+                    random.randint(1, self.height - 1),
+                )
                 self.fruits.append((new_x, new_y))
             else:
                 break
@@ -88,7 +109,6 @@ class Game:
     def return_reward(self, snake_idx):
         return self.rewards[snake_idx]
 
-
     def return_state_array(self):
         """Return array of current state.
         The game board is encoded as follows:
@@ -110,21 +130,26 @@ class Game:
                 state[snake.coordinates[-1]] = 2
 
         for x, y in self.fruits:
-           state[x, y] = 3
+            state[x, y] = 3
         return state.flatten()
 
     def create_new_snakes(self):
         if len(self.snakes) < self.max_number_of_snakes:
-            self.snake_pool.sort(key=lambda x:x.fitness())
+            self.snake_pool.sort(key=lambda x: x.fitness())
             fitness_cumsum = np.cumsum([s.fitness() for s in self.snake_pool])
         while len(self.snakes) < self.max_number_of_snakes:
-            s1 = self.snake_pool[np.searchsorted(fitness_cumsum,
-                                                 np.random.randint(fitness_cumsum[-1]))]
-            s2 = self.snake_pool[np.searchsorted(fitness_cumsum,
-                                                 np.random.randint(fitness_cumsum[-1]))]
-            new_snake = NeuroSnake.from_parents(self.width, self.height, s1, s2, 0.3, 0.1)
+            s1 = self.snake_pool[
+                np.searchsorted(fitness_cumsum, np.random.randint(fitness_cumsum[-1]))
+            ]
+            s2 = self.snake_pool[
+                np.searchsorted(fitness_cumsum, np.random.randint(fitness_cumsum[-1]))
+            ]
+            new_snake = NeuroSnake.from_parents(
+                self.width, self.height, s1, s2, 0.3, 0.1
+            )
             self.snake_pool.append(new_snake)
             self.snakes.append(new_snake)
+
 
 class Snake:
     def __init__(self, x, y, max_x, max_y, direction):
@@ -148,7 +173,12 @@ class Snake:
         head_x, head_y = self.coordinates[-1]
 
         # Do not allow 180° turnaround
-        if (new_direction, self.direction) in [("N", "S"), ("S", "N"), ("O", "W"), ("W", "O")]:
+        if (new_direction, self.direction) in [
+            ("N", "S"),
+            ("S", "N"),
+            ("O", "W"),
+            ("W", "O"),
+        ]:
             new_direction = self.direction
 
         if new_direction == "N":
@@ -266,7 +296,7 @@ def nn_training(screen):
             game.draw(screen)
             state = game.return_state_array()
             snake.draw(screen)
-            #screen.addstr(0, 0, "Epoch {}, Step {}, Reward {}".format(epoch, gs, rewards[-1:]))
+            # screen.addstr(0, 0, "Epoch {}, Step {}, Reward {}".format(epoch, gs, rewards[-1:]))
             direction_evals = net.prop_and_remember(state)
             screen.addstr(0, 0, "Probs: {}".format(direction_evals))
             direction_evals = np.exp(np.log(direction_evals) / temperature)
@@ -288,7 +318,7 @@ def nn_training(screen):
         # Give reward for length of snake
         if all(x == 0 for x in rewards):
             rewards[-1] += -20
-        rewards[-1] += snake.length**2
+        rewards[-1] += snake.length ** 2
         R = 0
         discounted_reward = np.zeros_like(rewards, dtype=float)
         for t in reversed(range(discounted_reward.shape[0])):
@@ -300,7 +330,6 @@ def nn_training(screen):
         net.backprop_value(actions, discounted_reward, gamma=0.01)
 
     net.save_state()
-
 
 
 if __name__ == "__main__":
