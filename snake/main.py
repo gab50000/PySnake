@@ -43,7 +43,7 @@ class Game:
         player_snake=None,
         max_number_of_fruits=1,
         max_number_of_snakes=1,
-        log=None
+        log=None,
     ):
         self.fruits = []
 
@@ -153,6 +153,10 @@ class Snake:
         self.max_x, self.max_y = max_x, max_y
         self.direction = direction
         self.length = 1
+
+    def __repr__(self):
+        x, y = self.coordinates[-1]
+        return f"Snake({x}, {y})"
 
     @classmethod
     def random_init(cls, width, height):
