@@ -119,6 +119,8 @@ class Game:
         for snk in snakes_to_be_deleted:
             self.snakes.remove(snk)
 
+    @property
+    def state_array(self):
     def return_reward(self, snake_idx):
         return self.rewards[snake_idx]
 
@@ -144,7 +146,7 @@ class Game:
 
         for x, y in self.fruits:
             state[x, y] = 3
-        return state.flatten()
+        return state.T
 
 
 class Snake:
