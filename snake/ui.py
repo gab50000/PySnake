@@ -1,5 +1,6 @@
 """Classes for rendering the Snake game"""
 import curses
+import logging
 from main import Game, Snake, Direction
 
 
@@ -70,6 +71,7 @@ class Curses(UI):
             curses.init_pair(i, curses_colors[i], curses.COLOR_BLACK)
         game_it = iter(game)
         direction = None
+
         while True:
             screen.clear()
             self.draw(screen)
@@ -79,17 +81,36 @@ class Curses(UI):
             direction = self.check_input(screen)
 
 
+class LogPositions(UI):
+    def run(self):
+        for _ in self.game:
+            for i, snake in enumerate(self.game.snakes):
+                print(f"{i}) {snake} (reward: {self.game.rewards}")
+
+
+class LogStates(UI):
+    def run(self):
+        for _ in self.game:
+            print(self.game.state_array)
+
+
 def get_screen_size(screen):
     y, x = screen.getmaxyx()
     return x, y
 
 
 def main():
+    logging.basicConfig(level=logging.DEBUG)
     x, y = curses.wrapper(get_screen_size)
     # Reduce y-size by one to avoid curses scroll problems
     y -= 1
-    game = Game(x, y, player_snake=Snake(10, 10, max_x=x, max_y=y, direction="O"))
-    ui = Curses(game)
+    game = Game(
+        x,
+        y,
+        player_snake=Snake(0, 0, max_x=x, max_y=y, direction=Direction.EAST),
+        max_number_of_fruits=300,
+    )
+    ui = LogPositions(game)
     ui.run()
 
 
