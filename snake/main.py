@@ -68,12 +68,12 @@ class Game:
             direction = yield
             if self.player_snake:
                 self.player_snake.update(direction)
-            self.check_collisions()
-            if not self.snakes:
-                game_over = True
             for snake in self.snakes:
                 if snake is not self.player_snake:
                     snake.update(None)
+            self.check_collisions()
+            if not self.snakes:
+                game_over = True
             self.update_fruits()
 
             if game_over:
