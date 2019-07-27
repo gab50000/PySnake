@@ -156,7 +156,7 @@ class Snake:
 
     @classmethod
     def random_init(cls, width, height):
-        start_direction = "N O S W".split()[random.randint(0, 3)]
+        start_direction = random.choice(list(Direction))
         x, y = random.randint(1, width - 1), random.randint(1, height - 1)
         return cls(x, y, width, height, start_direction)
 
@@ -170,18 +170,18 @@ class Snake:
 
         # Do not allow 180° turnaround
         if (new_direction, self.direction) in [
-            ("N", "S"),
-            ("S", "N"),
-            ("O", "W"),
-            ("W", "O"),
+            (Direction.NORTH, Direction.SOUTH),
+            (Direction.SOUTH, Direction.NORTH),
+            (Direction.EAST, Direction.WEST),
+            (Direction.WEST, Direction.EAST),
         ]:
             new_direction = self.direction
 
-        if new_direction == "N":
+        if new_direction == Direction.NORTH:
             new_x, new_y = head_x, head_y - 1
-        elif new_direction == "O":
+        elif new_direction == Direction.EAST:
             new_x, new_y = head_x + 1, head_y
-        elif new_direction == "S":
+        elif new_direction == Direction.SOUTH:
             new_x, new_y = head_x, head_y + 1
         else:
             new_x, new_y = head_x - 1, head_y
@@ -208,7 +208,7 @@ class NeuroSnake(Snake):
         self.age = 0
 
     def decide_direction(self, state):
-        direction = ("N", "O", "S", "W")[np.argmax(self.brain.prop(state))]
+        direction = list(Direction)[np.argmax(self.brain.prop(state))]
         self.update(direction)
         self.age += 1
 
@@ -237,7 +237,7 @@ def nn_training(screen):
         snakes = []
         for i in range(number_of_snakes):
             xx, yy = np.random.randint(x), np.random.randint(y)
-            direction = ("N", "O", "S", "W")[np.random.randint(4)]
+            direction = random.choice(list(Direction))
             snakes.append(Snake(xx, yy, x, y, direction))
 
         snake = snakes[0]
@@ -260,9 +260,9 @@ def nn_training(screen):
             screen.addstr(0, 0, "Probs: {}".format(direction_evals))
             direction_evals = np.exp(np.log(direction_evals) / temperature)
             direction_evals /= direction_evals.sum()
-            direction = np.argmax(np.random.multinomial(1, direction_evals))
-            actions.append(direction)
-            snake.update(("N", "O", "S", "W")[direction])
+            direction_idx = np.argmax(np.random.multinomial(1, direction_evals))
+            actions.append(direction_idx)
+            snake.update(list(Direction)[direction_idx])
             game.check_collisions()
             rewards.append(game.return_reward(0))
             if not game.snakes:

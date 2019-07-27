@@ -1,6 +1,6 @@
 """Classes for rendering the Snake game"""
 import curses
-from main import Game, Snake
+from main import Game, Snake, Direction
 
 
 curses_colors = (
@@ -41,13 +41,13 @@ class UI:
     def check_input(self, screen):
         inp = screen.getch()
         if inp == curses.KEY_UP:
-            direction = "N"
+            direction = Direction.NORTH
         elif inp == curses.KEY_DOWN:
-            direction = "S"
+            direction = Direction.SOUTH
         elif inp == curses.KEY_LEFT:
-            direction = "W"
+            direction = Direction.WEST
         elif inp == curses.KEY_RIGHT:
-            direction = "O"
+            direction = Direction.EAST
         else:
             direction = None
         return direction
