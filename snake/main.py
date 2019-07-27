@@ -27,23 +27,53 @@ curses_colors = (
 
 
 class Game:
+    """
+    Contains and manages the game state
+    """
+
     def __init__(
         self,
         width,
         height,
-        snakes,
         *,
+        snakes=None,
+        player_snake=None,
         max_number_of_fruits=1,
         max_number_of_snakes=1,
         log=None
     ):
         self.fruits = []
+
+        if snakes is None and player_snake is None:
+            raise ValueError("There are no snakes!")
+        if snakes is None:
+            snakes = []
         self.snakes = snakes
+        self.player_snake = player_snake
+        if player_snake:
+            self.snakes.append(player_snake)
         self.width, self.height = width, height
         self.log = log
         self.max_number_of_fruits = max_number_of_fruits
         self.max_number_of_snakes = max_number_of_snakes
         self.rewards = [0 for s in snakes]
+
+    def __iter__(self):
+        game_over = False
+
+        while True:
+            direction = yield
+            if self.player_snake:
+                self.player_snake.update(direction)
+            self.check_collisions()
+            if not self.snakes:
+                game_over = True
+            for snake in self.snakes:
+                snake.update(None)
+            self.update_fruits()
+
+            if game_over:
+                break
 
     def update_fruits(self):
         """Add fruits to the game until max_number_of_fruits is reached."""
@@ -56,24 +86,6 @@ class Game:
                 self.fruits.append((new_x, new_y))
             else:
                 break
-
-    def draw(self, screen):
-        for x, y in self.fruits:
-            screen.addstr(y, x, "O", curses.color_pair(6))
-
-    def check_input(self, screen):
-        inp = screen.getch()
-        if inp == curses.KEY_UP:
-            direction = "N"
-        elif inp == curses.KEY_DOWN:
-            direction = "S"
-        elif inp == curses.KEY_LEFT:
-            direction = "W"
-        elif inp == curses.KEY_RIGHT:
-            direction = "O"
-        else:
-            direction = None
-        return direction
 
     def check_collisions(self):
         fruits_to_be_deleted = []
@@ -198,10 +210,6 @@ class Snake:
         self.coordinates.append((new_x, new_y))
         if len(self.coordinates) > self.length:
             self.coordinates.popleft()
-
-    def draw(self, screen):
-        for x, y in self.coordinates:
-            screen.addstr(y, x, "X", curses.color_pair(3))
 
 
 class NeuroSnake(Snake):
