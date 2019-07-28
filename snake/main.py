@@ -116,27 +116,20 @@ class Game:
 
     @property
     def state_array(self):
-        """Return array of current state.
+        """
+        Return array of current state.
         The game board is encoded as follows:
         Snake body: 1
-        Snake head: 2
-        Fruit : 3
-        Snake head on fruit: 4"""
+        Fruit : 2
+        """
 
-        state = np.zeros((self.width, self.height))
+        state = np.zeros((self.width, self.height), int)
         for snake in self.snakes:
-            for i in range(len(snake.coordinates) - 1):
-                x, y = snake.coordinates[i]
+            for x, y in snake.coordinates:
                 state[x, y] = 1
-            head_coord = snake.coordinates[-1]
-            if head_coord in self.fruits:
-                state[snake.coordinates[-1]] = 4
-                self.fruits.remove(head_coord)
-            else:
-                state[snake.coordinates[-1]] = 2
 
         for x, y in self.fruits:
-            state[x, y] = 3
+            state[x, y] = 2
         return state
 
     def get_surrounding_view(self, snake):
