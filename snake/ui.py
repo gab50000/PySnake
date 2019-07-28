@@ -86,7 +86,10 @@ class Curses(UI):
         while True:
             screen.clear()
             if self.debug:
-                arr = self.game.get_surrounding_view(self.game.player_snake)
+                arr = self.game.get_surrounding_view(
+                    self.game.player_snake, onehot=True
+                )
+                arr = np.argmax(arr, axis=-1)
                 self.debug_msg(screen, str(arr))
             self.draw(screen)
             screen.refresh()
