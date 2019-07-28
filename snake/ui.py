@@ -43,6 +43,12 @@ class UI:
     def run(self):
         pass
 
+
+class Curses(UI):
+    def __init__(self, game, *, debug=False):
+        super().__init__(game)
+        self.debug = debug
+
     def check_input(self, screen):
         inp = screen.getch()
         if inp == curses.KEY_UP:
@@ -56,12 +62,6 @@ class UI:
         else:
             direction = None
         return direction
-
-
-class Curses(UI):
-    def __init__(self, game, *, debug=False):
-        super().__init__(game)
-        self.debug = debug
 
     def run(self):
         curses.wrapper(self._loop)
