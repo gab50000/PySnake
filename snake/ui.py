@@ -1,6 +1,10 @@
 """Classes for rendering the Snake game"""
 import curses
 import logging
+
+import fire
+import numpy as np
+
 from main import Game, Snake, Direction
 
 
@@ -20,7 +24,7 @@ curses_colors = (
 
 
 class UI:
-    def __init__(self, game: Game):
+    def __init__(self, game: Game, **kwargs):
         self.game = game
 
     def draw_fruits(self, screen):
@@ -55,8 +59,15 @@ class UI:
 
 
 class Curses(UI):
+    def __init__(self, game, *, debug=False):
+        super().__init__(game)
+        self.debug = debug
+
     def run(self):
         curses.wrapper(self._loop)
+
+    def debug_msg(self, screen, msg):
+        screen.addstr(0, 0, msg)
 
     def _loop(self, screen):
         y, x = screen.getmaxyx()
@@ -74,6 +85,9 @@ class Curses(UI):
 
         while True:
             screen.clear()
+            if self.debug:
+                arr = self.game.get_surrounding_view(self.game.player_snake)
+                self.debug_msg(screen, str(arr))
             self.draw(screen)
             screen.refresh()
             curses.napms(70)
@@ -99,7 +113,7 @@ def get_screen_size(screen):
     return x, y
 
 
-def main():
+def main(debug=False):
     logging.basicConfig(level=logging.DEBUG)
     x, y = curses.wrapper(get_screen_size)
     # Reduce y-size by one to avoid curses scroll problems
@@ -108,11 +122,11 @@ def main():
         x,
         y,
         player_snake=Snake(0, 0, max_x=x, max_y=y, direction=Direction.EAST),
-        max_number_of_fruits=300,
+        max_number_of_fruits=3,
     )
-    ui = LogPositions(game)
+    ui = Curses(game, debug=debug)
     ui.run()
 
 
 if __name__ == "__main__":
-    main()
+    fire.Fire(main)
