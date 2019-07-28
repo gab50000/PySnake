@@ -137,7 +137,65 @@ class Game:
 
         for x, y in self.fruits:
             state[x, y] = 3
-        return state.T
+        return state
+
+    def get_surrounding_view(self, snake):
+        idx = self.snakes.index(snake)
+        arr = self.state_array
+        x, y = self.snakes[idx].coordinates[-1]
+        view = np.roll(arr, (arr.shape[0] // 2 - x, arr.shape[1] // 2 - y), axis=(0, 1))
+        return view[
+            view.shape[0] // 2 - 2 : view.shape[0] // 2 + 3,
+            view.shape[1] // 2 - 2 : view.shape[1] // 2 + 3,
+        ].T
+
+    def reduced_coordinates(self, snake):
+        """
+        Returns an array of length three.
+        If the first entry is one, there is a fruit left to the snake.
+        If the second entry is one, there is a fruit ahead of the snake.
+        If the third entry is one, there is a fruit right of the snake.
+
+        Parameters
+        ----------
+        snake : Snake
+        """
+        head_x, head_y = snake.coordinates[-1]
+        direction = snake.direction
+        result = np.zeros(3)
+
+        for x, y in self.fruits:
+            if y == head_y:
+                if x > head_x:
+                    if direction == Direction.EAST:
+                        result[1] = 1
+                    elif direction == Direction.NORTH:
+                        result[2] = 1
+                    elif direction == Direction.SOUTH:
+                        result[0] = 1
+                elif x < head_x:
+                    if direction == Direction.WEST:
+                        result[1] = 1
+                    elif direction == Direction.NORTH:
+                        result[0] = 1
+                    elif direction == Direction.SOUTH:
+                        result[2] = 1
+            elif x == head_x:
+                if y > head_y:
+                    if direction == Direction.EAST:
+                        result[0] = 1
+                    elif direction == Direction.NORTH:
+                        result[1] = 1
+                    elif direction == Direction.WEST:
+                        result[2] = 1
+                elif y < head_y:
+                    if direction == Direction.EAST:
+                        result[0] = 1
+                    elif direction == Direction.NORTH:
+                        result[1] = 1
+                    elif direction == Direction.WEST:
+                        result[2] = 1
+        return result
 
 
 class Snake:
