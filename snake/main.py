@@ -132,15 +132,23 @@ class Game:
             state[x, y] = 2
         return state
 
-    def get_surrounding_view(self, snake):
+    def get_surrounding_view(self, snake, onehot=False):
         idx = self.snakes.index(snake)
         arr = self.state_array
         x, y = self.snakes[idx].coordinates[-1]
         view = np.roll(arr, (arr.shape[0] // 2 - x, arr.shape[1] // 2 - y), axis=(0, 1))
-        return view[
+        view = view[
             view.shape[0] // 2 - 2 : view.shape[0] // 2 + 3,
             view.shape[1] // 2 - 2 : view.shape[1] // 2 + 3,
         ].T
+
+        if onehot:
+            vec = np.zeros((*view.shape, 3), int)
+            nonzero = view > 0
+            vec[nonzero, view[nonzero]] = 1
+            return vec
+
+        return view
 
     def reduced_coordinates(self, snake):
         """
