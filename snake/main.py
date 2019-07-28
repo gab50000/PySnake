@@ -40,6 +40,8 @@ class Game:
         max_number_of_fruits=1,
         max_number_of_snakes=1,
         log=None,
+        view_size=3,
+        border=False
     ):
         self.fruits = []
 
@@ -53,6 +55,8 @@ class Game:
             self.snakes.append(player_snake)
         self.width, self.height = width, height
         self.log = log
+        self.view_size = view_size
+        self.border = border
         self.max_number_of_fruits = max_number_of_fruits
         self.max_number_of_snakes = max_number_of_snakes
         self.rewards = [0 for s in snakes]
@@ -91,6 +95,16 @@ class Game:
 
         for s_idx, s in enumerate(self.snakes):
             x_s, y_s = s.coordinates[-1]
+
+            if self.border:
+                if any((x_s < 0, x_s > self.width, y_s < 0, y_s > self.height)):
+                    snakes_to_be_deleted.append(s)
+                    continue
+            else:
+                x_s %= self.width
+                y_s %= self.height
+                s.coordinates[-1] = x_s, y_s
+
             # Check fruit collision
             for fruit in self.fruits:
                 if (x_s, y_s) == fruit:
@@ -133,22 +147,29 @@ class Game:
         return state
 
     def get_surrounding_view(self, snake, onehot=False):
+        vs = self.view_size
         idx = self.snakes.index(snake)
         arr = self.state_array
         x, y = self.snakes[idx].coordinates[-1]
         view = np.roll(arr, (arr.shape[0] // 2 - x, arr.shape[1] // 2 - y), axis=(0, 1))
         view = view[
-            view.shape[0] // 2 - 2 : view.shape[0] // 2 + 3,
-            view.shape[1] // 2 - 2 : view.shape[1] // 2 + 3,
+            view.shape[0] // 2 - vs + 1 : view.shape[0] // 2 + vs,
+            view.shape[1] // 2 - vs + 1 : view.shape[1] // 2 + vs,
         ].T
 
         if onehot:
-            vec = np.zeros((*view.shape, 3), int)
+            vec = np.zeros((*view.shape, 2), int)
             nonzero = view > 0
-            vec[nonzero, view[nonzero]] = 1
+            vec[nonzero, view[nonzero] - 1] = 1
             return vec
 
         return view
+
+    def coordinate_occupied(self, coord):
+        if coord in self.fruits:
+            return 1
+        if any(coord in snake.coordinates for snake in self.snakes):
+            return 2
 
     def reduced_coordinates(self, snake):
         """
@@ -163,38 +184,37 @@ class Game:
         """
         head_x, head_y = snake.coordinates[-1]
         direction = snake.direction
-        result = np.zeros(3)
+        result = np.zeros((4, 2))
 
-        for x, y in self.fruits:
-            if y == head_y:
-                if x > head_x:
-                    if direction == Direction.EAST:
-                        result[1] = 1
-                    elif direction == Direction.NORTH:
-                        result[2] = 1
-                    elif direction == Direction.SOUTH:
-                        result[0] = 1
-                elif x < head_x:
-                    if direction == Direction.WEST:
-                        result[1] = 1
-                    elif direction == Direction.NORTH:
-                        result[0] = 1
-                    elif direction == Direction.SOUTH:
-                        result[2] = 1
-            elif x == head_x:
-                if y > head_y:
-                    if direction == Direction.EAST:
-                        result[0] = 1
-                    elif direction == Direction.NORTH:
-                        result[1] = 1
-                    elif direction == Direction.WEST:
-                        result[2] = 1
-                elif y < head_y:
-                    if direction == Direction.EAST:
-                        result[0] = 1
-                    elif direction == Direction.NORTH:
-                        result[1] = 1
-                    elif direction == Direction.WEST:
-                        result[2] = 1
-        return result
+        # look north
+        for y in reversed(range(head_y)):
+            occ = self.coordinate_occupied((head_x, y))
+            if occ:
+                result[0, occ - 1] = 1
+                break
+
+        # look east
+        for x in range(head_x + 1, self.width):
+            occ = self.coordinate_occupied((x, head_y))
+            if occ:
+                result[1, occ - 1] = 1
+                break
+
+        # look south
+        for y in range(head_y + 1, self.height):
+            occ = self.coordinate_occupied((head_x, y))
+            if occ:
+                result[2, occ - 1] = 1
+                break
+
+        # look west
+        for x in reversed(range(head_x)):
+            occ = self.coordinate_occupied((x, head_y))
+            if occ:
+                result[3, occ - 1] = 1
+                break
+
+        direction_idx = direction.value
+        result = np.roll(result, Direction.EAST.value - direction_idx, axis=0)
+        return result[:3]
 
