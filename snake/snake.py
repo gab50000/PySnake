@@ -3,6 +3,8 @@ from enum import Enum
 import random
 import logging
 
+import numpy as np
+
 from neuro import NeuralNet
 
 
@@ -57,9 +59,6 @@ class Snake:
 
         self.direction = new_direction
 
-        new_x %= self.max_x
-        new_y %= self.max_y
-
         self.coordinates.append((new_x, new_y))
         if len(self.coordinates) > self.length:
             self.coordinates.popleft()
@@ -67,11 +66,17 @@ class Snake:
 
 class NeuroSnake(Snake):
     def __init__(
-        self, x, y, max_x, max_y, direction, input_size, hidden_size, dna=None
+        self, x, y, max_x, max_y, input_size, hidden_size, direction=None, dna=None
     ):
-        super().__init__(x, y, max_x, max_y, direction)
-        self.net = NeuralNet(input_size, hidden_size, 4, dna=dna)
+        super().__init__(x, y, max_x, max_y, direction=direction)
+        self.net = NeuralNet(input_size, hidden_size, 3, dna=dna)
 
     def decide_direction(self, view):
-        return list(Direction)[self.net.decide(view)]
+        dirs = list(Direction)
+        if self.direction is None:
+            return random.choice(dirs)
+
+        dir_idx = self.direction.value
+        idx = np.argmax(self.net.forward(view)) - 1
+        return dirs[idx]
 
