@@ -25,6 +25,11 @@ curses_colors = (
 )
 
 
+FRUIT_REWARD = 10
+DEATH_REWARD = -100
+DISTANCE_REWARD = 2
+
+
 class Game:
     """
     Contains and manages the game state
@@ -60,6 +65,7 @@ class Game:
         self.max_number_of_fruits = max_number_of_fruits
         self.max_number_of_snakes = max_number_of_snakes
         self.rewards = [0 for s in snakes]
+        self.closest_distance = [None for s in snakes]
 
     def __iter__(self):
         game_over = False
@@ -76,6 +82,7 @@ class Game:
             if not self.snakes:
                 game_over = True
             self.update_fruits()
+            self.update_distances()
 
             if game_over:
                 break
@@ -88,6 +95,33 @@ class Game:
                 random.randint(0, self.height - 1),
             )
             self.fruits.append((new_x, new_y))
+
+    def update_distances(self):
+        new_distances = self.determine_fruit_distances()
+        for idx, (old_dist, new_dist) in enumerate(
+            zip(self.closest_distance, new_distances)
+        ):
+            if old_dist is None:
+                self.closest_distance[idx] = new_dist
+                continue
+
+            if new_dist < old_dist:
+                self.rewards[idx] += DISTANCE_REWARD
+            elif new_dist > old_dist:
+                self.rewards[idx] -= DISTANCE_REWARD
+            self.closest_distance[idx] = new_dist
+
+    def determine_fruit_distances(self):
+        return [
+            min([self.fruit_distance(snake, fruit) for fruit in self.fruits])
+            for snake in self.snakes
+        ]
+
+    @staticmethod
+    def fruit_distance(snake, fruit):
+        x, y = snake.coordinates[-1]
+        xf, yf = fruit
+        return abs(x - xf) + abs(y - yf)
 
     def check_collisions(self):
         fruits_to_be_deleted = []
@@ -110,7 +144,7 @@ class Game:
                 if (x_s, y_s) == fruit:
                     s.length += 2
                     fruits_to_be_deleted.append(fruit)
-                    self.rewards[s_idx] += 10
+                    self.rewards[s_idx] += FRUIT_REWARD
                     logger.debug("Snake %s got a fruit", s_idx)
             # Check snake collisions
             for s2_idx, s2 in enumerate(self.snakes):
@@ -122,6 +156,7 @@ class Game:
                     for x2s, y2s in list(s2.coordinates)[:-1]:
                         if (x_s, y_s) == (x2s, y2s):
                             snakes_to_be_deleted.append(s)
+                            self.rewards[s_idx].append(DEATH_REWARD)
 
         for tbd in fruits_to_be_deleted:
             self.fruits.remove(tbd)
