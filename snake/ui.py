@@ -96,7 +96,8 @@ class Curses(UI):
         while True:
             screen.clear()
             if self.debug:
-                arr = self.game.reduced_coordinates(player_snake)
+                # arr = self.game.reduced_coordinates(player_snake)
+                arr = self.game.rewards
                 self.debug_msg(screen, str(arr))
             self.draw(screen)
             screen.refresh()
@@ -152,7 +153,7 @@ class ParameterSearch:
             new_dna = dna + np.random.normal(
                 loc=0, scale=self.search_radius / np.sqrt(dna.size), size=dna.size
             )
-            new_score = self.benchmark(new_dna, n=n)
+            new_score = self.benchmark(new_dna)
             if new_score > current_score:
                 print("Best score:", new_score)
                 np.save("best_dna", new_dna)
@@ -263,22 +264,21 @@ def training(
         search_radius=search_radius,
         n_average=n_average,
     )
-    minimize(
-        ui.benchmark,
-        x0=np.random.rand((input_size + 1) * hidden_size + (hidden_size + 1) * 3),
-        callback=print,
-        method=optimizer,
-        options={"disp": True},
-    )
-    # ui.optimize(
-    #    start_dna=np.random.normal(
-    #        size=(input_size + 1) * hidden_size + (hidden_size + 1) * 3,
-    #        loc=0,
-    #        scale=1.0,
-    #    ),
-    #    n_optimize=n_optimize,
-    #    n=n_average,
+    # minimize(
+    #    ui.benchmark,
+    #    x0=np.random.rand((input_size + 1) * hidden_size + (hidden_size + 1) * 3),
+    #    callback=print,
+    #    method=optimizer,
+    #    options={"disp": True},
     # )
+    ui.optimize(
+        start_dna=np.random.normal(
+            size=(input_size + 1) * hidden_size + (hidden_size + 1) * 3,
+            loc=0,
+            scale=1.0,
+        ),
+        n_optimize=n_optimize,
+    )
 
 
 if __name__ == "__main__":
