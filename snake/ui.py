@@ -52,10 +52,11 @@ class UI:
 
 
 class Curses(UI):
-    def __init__(self, game, *, debug=False, robot=False):
+    def __init__(self, game, *, debug=False, robot=False, sleep=70):
         super().__init__(game)
         self.debug = debug
         self.robot = robot
+        self.sleep = sleep
 
     def check_input(self, screen):
         inp = screen.getch()
@@ -95,12 +96,11 @@ class Curses(UI):
         while True:
             screen.clear()
             if self.debug:
-                arr = self.game.get_surrounding_view(player_snake, onehot=True)
-                arr = np.argmax(arr, axis=-1)
+                arr = self.game.reduced_coordinates(player_snake)
                 self.debug_msg(screen, str(arr))
             self.draw(screen)
             screen.refresh()
-            curses.napms(70)
+            curses.napms(self.sleep)
             game_it.send(direction)
             if self.robot:
                 direction = player_snake.decide_direction(
@@ -124,30 +124,33 @@ class LogStates(UI):
 
 
 class ParameterSearch:
-    def __init__(self, game_options, snake_options, search_radius, max_steps=10_000):
+    def __init__(
+        self, game_options, snake_options, search_radius, max_steps=10_000, n_average=10
+    ):
         self.game_options = game_options
         self.snake_options = snake_options
         self.max_steps = max_steps
         self.search_radius = search_radius
+        self.n_average = n_average
 
-    def benchmark(self, dna, n=10):
+    def benchmark(self, dna):
         score = 0
-        for _ in range(n):
+        for _ in range(self.n_average):
             game = Game(
                 **self.game_options,
                 player_snake=NeuroSnake(**self.snake_options, dna=dna),
             )
             score += self.run(game)
-        return score / n
+        return -score / self.n_average
 
-    def optimize(self, start_dna, n_optimize=1000, n=10):
-        current_score = self.benchmark(start_dna, n=n)
+    def optimize(self, start_dna, n_optimize=1000):
+        current_score = self.benchmark(start_dna)
         print("Current score:", current_score)
         dna = start_dna
         for i in range(n_optimize):
             logger.info("Epoch %s", i)
             new_dna = dna + np.random.normal(
-                loc=0, scale=self.search_radius / np.sqrt(dna.size)
+                loc=0, scale=self.search_radius / np.sqrt(dna.size), size=dna.size
             )
             new_score = self.benchmark(new_dna, n=n)
             if new_score > current_score:
@@ -167,9 +170,9 @@ class ParameterSearch:
             except StopIteration:
                 break
             direction = player_snake.decide_direction(
-                game.get_surrounding_view(player_snake, onehot=True).flatten()
+                game.reduced_coordinates(player_snake).flatten()
             )
-        logger.info("Stopped after %s steps", step)
+        logger.debug("Stopped after %s steps", step)
         return game.rewards[0]
 
 
@@ -186,6 +189,8 @@ def main(
     height=None,
     n_fruits=30,
     hidden_size=10,
+    sleep=70,
+    border=False,
 ):
     logging.basicConfig(level=logging.DEBUG)
     x, y = curses.wrapper(get_screen_size)
@@ -196,60 +201,84 @@ def main(
     # Reduce y-size by one to avoid curses scroll problems
     y -= 1
     if dna_file:
-        dna = np.load("best_dna.npy")
+        dna = np.load(dna_file)
     else:
         dna = None
+    input_size = 6
+
     game = Game(
         x,
         y,
         player_snake=NeuroSnake(
-            0,
-            0,
+            x // 2,
+            y // 2,
             max_x=x,
             max_y=y,
-            input_size=75,
-            hidden_size=10,
+            input_size=input_size,
+            hidden_size=hidden_size,
             dna=dna,
-            direction=Direction.EAST,
+            direction=Direction.SOUTH,
         ),
         max_number_of_fruits=n_fruits,
+        border=border,
     )
-    ui = Curses(game, debug=debug, robot=robot)
+    ui = Curses(game, debug=debug, robot=robot, sleep=sleep)
     ui.run()
 
 
 def training(
     n_optimize=100,
-    input_size=75,
     hidden_size=10,
     max_steps=100,
     search_radius=1,
     log_level="info",
+    n_fruits=100,
+    n_average=10,
+    border=False,
+    optimizer=None,
 ):
     logging.basicConfig(level=getattr(logging, log_level.upper()))
     x, y = 100, 100
+    input_size = 6
     # Reduce y-size by one to avoid curses scroll problems
-    game_options = {"width": x, "height": y, "max_number_of_fruits": 100}
+    game_options = {
+        "width": x,
+        "height": y,
+        "max_number_of_fruits": n_fruits,
+        "border": border,
+    }
     snake_options = {
         "x": 0,
         "y": 0,
         "max_x": x,
         "max_y": y,
-        "input_size": 75,
-        "hidden_size": 10,
+        "input_size": input_size,
+        "hidden_size": hidden_size,
+        "direction": Direction.SOUTH,
     }
     ui = ParameterSearch(
-        game_options, snake_options, max_steps=max_steps, search_radius=search_radius
+        game_options,
+        snake_options,
+        max_steps=max_steps,
+        search_radius=search_radius,
+        n_average=n_average,
     )
-    # minimize(
-    #    ui.benchmark,
-    #    x0=np.random.rand((input_size + 1) * hidden_size + (hidden_size + 1) * 4),
-    #    options=dict(disp=True),
+    minimize(
+        ui.benchmark,
+        x0=np.random.rand((input_size + 1) * hidden_size + (hidden_size + 1) * 3),
+        callback=print,
+        method=optimizer,
+        options={"disp": True},
+    )
+    # ui.optimize(
+    #    start_dna=np.random.normal(
+    #        size=(input_size + 1) * hidden_size + (hidden_size + 1) * 3,
+    #        loc=0,
+    #        scale=1.0,
+    #    ),
+    #    n_optimize=n_optimize,
+    #    n=n_average,
     # )
-    ui.optimize(
-        start_dna=np.zeros((input_size + 1) * hidden_size + (hidden_size + 1) * 3),
-        n_optimize=n_optimize,
-    )
 
 
 if __name__ == "__main__":
