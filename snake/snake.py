@@ -70,13 +70,20 @@ class NeuroSnake(Snake):
     ):
         super().__init__(x, y, max_x, max_y, direction=direction)
         self.net = NeuralNet(input_size, hidden_size, 3, dna=dna)
+        self.net_output = None
 
     def decide_direction(self, view):
         dirs = list(Direction)
         if self.direction is None:
-            return random.choice(dirs)
+            self.direction = random.choice(dirs)
+            return self.direction
 
-        dir_idx = self.direction.value
-        idx = np.argmax(self.net.forward(view)) - 1
-        return dirs[idx]
+        self.net_output = self.net.forward(view)
+        dir_idx = self.direction.value - 1
+        idx = np.argmax(self.net_output) - 1
+        new_dir = dirs[(dir_idx + idx) % 4]
+        logger.debug("Old direction: %s", self.direction)
+        logger.debug("New direction: %s", new_dir)
+        self.direction = new_dir
+        return new_dir
 
