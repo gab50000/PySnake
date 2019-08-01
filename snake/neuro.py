@@ -28,7 +28,7 @@ class NeuralNet:
             self.W2 /= np.sqrt(self.W2.shape[0])
 
     def forward(self, x1):
-        x2 = np.tanh(0, x1 @ self.W1[:-1] + self.W1[-1])
+        x2 = np.tanh(x1 @ self.W1[:-1] + self.W1[-1])
         x3 = x2 @ self.W2[:-1] + self.W2[-1]
         softmax_x3 = np.exp(x3 - x3.max(axis=-1, keepdims=True))
         softmax_x3 /= softmax_x3.sum(axis=-1, keepdims=True)

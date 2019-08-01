@@ -69,7 +69,6 @@ class Game:
 
     def __iter__(self):
         game_over = False
-        old_direction = None
 
         while True:
             direction = yield
@@ -156,7 +155,7 @@ class Game:
                     for x2s, y2s in list(s2.coordinates)[:-1]:
                         if (x_s, y_s) == (x2s, y2s):
                             snakes_to_be_deleted.append(s)
-                            self.rewards[s_idx].append(DEATH_REWARD)
+                            self.rewards[s_idx] += DEATH_REWARD
 
         for tbd in fruits_to_be_deleted:
             self.fruits.remove(tbd)
