@@ -10,9 +10,11 @@ from tqdm import trange
 
 from main import Game
 from snake import Direction, Snake, NeuroSnake
+from abc_algorithm.main import Swarm
 
 
 logger = logging.getLogger(__name__)
+logging.getLogger("abc_algorithm.main").setLevel(logging.DEBUG)
 
 
 curses_colors = (
@@ -95,18 +97,18 @@ class Curses(UI):
 
         while True:
             screen.clear()
+            coords = self.game.reduced_coordinates(player_snake).flatten()
             if self.debug:
                 # arr = self.game.reduced_coordinates(player_snake)
-                arr = self.game.rewards
-                self.debug_msg(screen, str(arr))
+                self.debug_msg(
+                    screen, str([coords, player_snake.net_output, game.rewards])
+                )
             self.draw(screen)
             screen.refresh()
             curses.napms(self.sleep)
             game_it.send(direction)
             if self.robot:
-                direction = player_snake.decide_direction(
-                    self.game.get_surrounding_view(player_snake, onehot=True).flatten()
-                )
+                direction = player_snake.decide_direction(coords)
             else:
                 direction = self.check_input(screen)
 
@@ -126,13 +128,20 @@ class LogStates(UI):
 
 class ParameterSearch:
     def __init__(
-        self, game_options, snake_options, search_radius, max_steps=10_000, n_average=10
+        self,
+        game_options,
+        snake_options,
+        search_radius,
+        max_steps=10_000,
+        n_average=10,
+        dna=None,
     ):
         self.game_options = game_options
         self.snake_options = snake_options
         self.max_steps = max_steps
         self.search_radius = search_radius
         self.n_average = n_average
+        self.dna = dna
 
     def benchmark(self, dna):
         score = 0
@@ -142,12 +151,12 @@ class ParameterSearch:
                 player_snake=NeuroSnake(**self.snake_options, dna=dna),
             )
             score += self.run(game)
-        return -score / self.n_average
+        return score / self.n_average
 
-    def optimize(self, start_dna, n_optimize=1000):
-        current_score = self.benchmark(start_dna)
+    def optimize(self, n_optimize=1000):
+        dna = self.dna
+        current_score = self.benchmark(dna)
         print("Current score:", current_score)
-        dna = start_dna
         for i in range(n_optimize):
             logger.info("Epoch %s", i)
             new_dna = dna + np.random.normal(
@@ -237,6 +246,7 @@ def training(
     n_average=10,
     border=False,
     optimizer=None,
+    dna_file=None,
 ):
     logging.basicConfig(level=getattr(logging, log_level.upper()))
     x, y = 100, 100
@@ -249,36 +259,49 @@ def training(
         "border": border,
     }
     snake_options = {
-        "x": 0,
-        "y": 0,
+        "x": x // 2,
+        "y": y // 2,
         "max_x": x,
         "max_y": y,
         "input_size": input_size,
         "hidden_size": hidden_size,
         "direction": Direction.SOUTH,
     }
+
+    if dna_file:
+        try:
+            dna = np.load(dna_file)
+        except FileNotFoundError:
+            logger.error("File not found")
+            dna = None
+    else:
+        dna = np.random.normal(
+            size=(input_size + 1) * hidden_size + (hidden_size + 1) * 3,
+            loc=0,
+            scale=1.0,
+        )
+
     ui = ParameterSearch(
         game_options,
         snake_options,
         max_steps=max_steps,
         search_radius=search_radius,
         n_average=n_average,
+        dna=dna,
     )
-    # minimize(
-    #    ui.benchmark,
-    #    x0=np.random.rand((input_size + 1) * hidden_size + (hidden_size + 1) * 3),
-    #    callback=print,
-    #    method=optimizer,
-    #    options={"disp": True},
-    # )
-    ui.optimize(
-        start_dna=np.random.normal(
-            size=(input_size + 1) * hidden_size + (hidden_size + 1) * 3,
-            loc=0,
-            scale=1.0,
-        ),
-        n_optimize=n_optimize,
+    swarm = Swarm(
+        ui.benchmark,
+        (input_size + 1) * hidden_size + (hidden_size + 1) * 3,
+        n_employed=10,
+        n_onlooker=5,
+        limit=10,
+        max_cycles=n_optimize,
+        lower_bound=-1,
+        upper_bound=1,
     )
+    for result in swarm.run():
+        logger.info("Saving to %s", dna_file)
+        np.save(dna_file, result)
 
 
 if __name__ == "__main__":
