@@ -46,7 +46,8 @@ class Game:
         max_number_of_snakes=1,
         log=None,
         view_size=3,
-        border=False
+        border=False,
+        seed=None
     ):
         self.fruits = []
 
@@ -66,6 +67,7 @@ class Game:
         self.max_number_of_snakes = max_number_of_snakes
         self.rewards = [0 for s in snakes]
         self.closest_distance = [None for s in snakes]
+        self.rng = np.random.RandomState(seed)
         self.update_fruits()
 
     def __iter__(self):
@@ -101,8 +103,8 @@ class Game:
         """Add fruits to the game until max_number_of_fruits is reached."""
         while len(self.fruits) < self.max_number_of_fruits:
             new_x, new_y = (
-                random.randint(0, self.width - 1),
-                random.randint(0, self.height - 1),
+                self.rng.randint(0, self.width - 1),
+                self.rng.randint(0, self.height - 1),
             )
             self.fruits.append((new_x, new_y))
 
