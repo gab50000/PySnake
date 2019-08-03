@@ -241,6 +241,7 @@ def training(
     dna_file=None,
     width=20,
     height=None,
+    seed=None,
 ):
     logging.basicConfig(level=getattr(logging, log_level.upper()))
     x = width
@@ -252,6 +253,7 @@ def training(
         "height": y,
         "max_number_of_fruits": n_fruits,
         "border": border,
+        "seed": seed,
     }
     snake_options = {
         "x": x // 2,
