@@ -66,6 +66,7 @@ class Game:
         self.max_number_of_snakes = max_number_of_snakes
         self.rewards = [0 for s in snakes]
         self.closest_distance = [None for s in snakes]
+        self.update_fruits()
 
     def __iter__(self):
         game_over = False
