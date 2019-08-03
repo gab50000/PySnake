@@ -143,7 +143,7 @@ class Game:
             x_s, y_s = s.coordinates[-1]
 
             if self.border:
-                if any((x_s < 0, x_s > self.width, y_s < 0, y_s > self.height)):
+                if any((x_s < 0, x_s >= self.width, y_s < 0, y_s >= self.height)):
                     snakes_to_be_deleted.append(s)
                     continue
             else:
