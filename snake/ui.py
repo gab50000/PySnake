@@ -195,8 +195,6 @@ def main(
     if width:
         x = width
         y = width
-    # Reduce y-size by one to avoid curses scroll problems
-    y -= 1
     if dna_file:
         dna = np.load(dna_file)
     else:
