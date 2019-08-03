@@ -144,7 +144,7 @@ class ParameterSearch:
                 player_snake=NeuroSnake(**self.snake_options, dna=dna),
             )
             score += self.run(game)
-        return score / self.n_average
+        return -score / self.n_average
 
     def run(self, game):
         game_it = iter(game)
