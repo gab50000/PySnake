@@ -14,7 +14,6 @@ from abc_algorithm.main import Swarm
 
 
 logger = logging.getLogger(__name__)
-logging.getLogger("abc_algorithm.main").setLevel(logging.DEBUG)
 
 
 curses_colors = (
@@ -85,6 +84,7 @@ class Curses(UI):
         assert (
             self.game.width <= x and self.game.height <= y
         ), f"Wrong game dimensions {self.game.width}, {self.game.height} != {x}, {y}!"
+        y -= 1
         game = self.game
         player_snake = self.game.player_snake
         curses.curs_set(0)
@@ -101,7 +101,15 @@ class Curses(UI):
             if self.debug:
                 # arr = self.game.reduced_coordinates(player_snake)
                 self.debug_msg(
-                    screen, str([coords, player_snake.net_output, game.rewards])
+                    screen,
+                    str(
+                        [
+                            coords,
+                            player_snake.net_output,
+                            game.rewards,
+                            player_snake.direction,
+                        ]
+                    ),
                 )
             self.draw(screen)
             screen.refresh()
@@ -212,7 +220,11 @@ def main(
         border=border,
     )
     ui = Curses(game, debug=debug, robot=robot, sleep=sleep)
-    ui.run()
+    try:
+        ui.run()
+    except StopIteration:
+        print("Game Over")
+        print("Score:", *game.rewards)
 
 
 def training(
