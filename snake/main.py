@@ -74,6 +74,7 @@ class Game:
         while True:
             direction = yield
             if self.player_snake:
+                self.punish_circles(self.player_snake, direction)
                 self.player_snake.update(direction)
             for snake in self.snakes:
                 if snake is not self.player_snake:
@@ -86,6 +87,15 @@ class Game:
 
             if game_over:
                 break
+
+    def punish_circles(self, snake, new_direction):
+        dir_list = list(Direction)
+        dir_idx = dir_list.index(snake.direction)
+        snake_idx = self.snakes.index(snake)
+        i1 = (dir_idx + 1) % 4
+        i2 = (dir_idx - 1) % 4
+        if dir_list[i1] == new_direction or dir_list[i2] == new_direction:
+            self.rewards[snake_idx] -= 1
 
     def update_fruits(self):
         """Add fruits to the game until max_number_of_fruits is reached."""
@@ -252,4 +262,3 @@ class Game:
         direction_idx = direction.value
         result = np.roll(result, Direction.EAST.value - direction_idx, axis=0)
         return result[:3]
-
