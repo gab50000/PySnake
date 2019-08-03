@@ -128,18 +128,11 @@ class LogStates(UI):
 
 class ParameterSearch:
     def __init__(
-        self,
-        game_options,
-        snake_options,
-        search_radius,
-        max_steps=10_000,
-        n_average=10,
-        dna=None,
+        self, game_options, snake_options, max_steps=10_000, n_average=10, dna=None
     ):
         self.game_options = game_options
         self.snake_options = snake_options
         self.max_steps = max_steps
-        self.search_radius = search_radius
         self.n_average = n_average
         self.dna = dna
 
@@ -152,22 +145,6 @@ class ParameterSearch:
             )
             score += self.run(game)
         return score / self.n_average
-
-    def optimize(self, n_optimize=1000):
-        dna = self.dna
-        current_score = self.benchmark(dna)
-        print("Current score:", current_score)
-        for i in range(n_optimize):
-            logger.info("Epoch %s", i)
-            new_dna = dna + np.random.normal(
-                loc=0, scale=self.search_radius / np.sqrt(dna.size), size=dna.size
-            )
-            new_score = self.benchmark(new_dna)
-            if new_score > current_score:
-                print("Best score:", new_score)
-                np.save("best_dna", new_dna)
-                current_score = new_score
-                dna = new_dna
 
     def run(self, game):
         game_it = iter(game)
@@ -186,9 +163,13 @@ class ParameterSearch:
         return game.rewards[0]
 
 
-def get_screen_size(screen):
+def _get_screen_size(screen):
     y, x = screen.getmaxyx()
     return x, y
+
+
+def get_screen_size():
+    print(curses.wrapper(_get_screen_size))
 
 
 def main(
@@ -196,18 +177,16 @@ def main(
     robot=False,
     dna_file=None,
     width=None,
-    height=None,
     n_fruits=30,
     hidden_size=10,
     sleep=70,
     border=False,
 ):
     logging.basicConfig(level=logging.DEBUG)
-    x, y = curses.wrapper(get_screen_size)
+    x, y = curses.wrapper(_get_screen_size)
     if width:
         x = width
-    if height:
-        y = height
+        y = width
     # Reduce y-size by one to avoid curses scroll problems
     y -= 1
     if dna_file:
@@ -242,14 +221,18 @@ def training(
     max_steps=100,
     search_radius=1,
     log_level="info",
-    n_fruits=100,
+    n_employed=20,
+    n_onlooker=20,
+    n_fruits=10,
     n_average=10,
     border=False,
-    optimizer=None,
     dna_file=None,
+    width=20,
+    height=None,
 ):
     logging.basicConfig(level=getattr(logging, log_level.upper()))
-    x, y = 100, 100
+    x = width
+    y = height if height else x
     input_size = 6
     # Reduce y-size by one to avoid curses scroll problems
     game_options = {
@@ -282,22 +265,18 @@ def training(
         )
 
     ui = ParameterSearch(
-        game_options,
-        snake_options,
-        max_steps=max_steps,
-        search_radius=search_radius,
-        n_average=n_average,
-        dna=dna,
+        game_options, snake_options, max_steps=max_steps, n_average=n_average, dna=dna
     )
     swarm = Swarm(
         ui.benchmark,
         (input_size + 1) * hidden_size + (hidden_size + 1) * 3,
-        n_employed=10,
-        n_onlooker=5,
+        n_employed=n_employed,
+        n_onlooker=n_onlooker,
         limit=10,
         max_cycles=n_optimize,
         lower_bound=-1,
         upper_bound=1,
+        search_radius=search_radius,
     )
     for result in swarm.run():
         logger.info("Saving to %s", dna_file)
