@@ -84,6 +84,5 @@ class NeuroSnake(Snake):
         new_dir = dirs[(dir_idx + idx) % 4]
         logger.debug("Old direction: %s", self.direction)
         logger.debug("New direction: %s", new_dir)
-        self.direction = new_dir
         return new_dir
 
