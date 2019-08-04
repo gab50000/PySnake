@@ -115,10 +115,11 @@ class Curses(UI):
             screen.refresh()
             curses.napms(self.sleep)
             game_it.send(direction)
-            if self.robot:
+            player_input = self.check_input(screen)
+            if player_input is None and self.robot:
                 direction = player_snake.decide_direction(coords)
             else:
-                direction = self.check_input(screen)
+                direction = player_input
 
 
 class LogPositions(UI):
