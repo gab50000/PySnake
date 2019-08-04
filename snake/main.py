@@ -26,7 +26,7 @@ curses_colors = (
 
 
 FRUIT_REWARD = 10
-DEATH_REWARD = -100
+DEATH_REWARD = -50
 DISTANCE_REWARD = 2
 
 
@@ -145,6 +145,7 @@ class Game:
             if self.border:
                 if any((x_s < 0, x_s >= self.width, y_s < 0, y_s >= self.height)):
                     snakes_to_be_deleted.append(s)
+                    self.rewards[s_idx] += DEATH_REWARD
                     continue
             else:
                 x_s %= self.width
