@@ -5,7 +5,6 @@ import multiprocessing
 
 import fire
 import numpy as np
-from scipy.optimize import minimize
 from tqdm import trange
 from abc_algorithm.main import Swarm
 
