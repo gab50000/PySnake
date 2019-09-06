@@ -120,7 +120,7 @@ class Game:
             if new_dist < old_dist:
                 self.rewards[idx] += DISTANCE_REWARD
             elif new_dist > old_dist:
-                self.rewards[idx] -= DISTANCE_REWARD
+                self.rewards[idx] -= DISTANCE_REWARD + 1
             self.closest_distance[idx] = new_dist
 
     def determine_fruit_distances(self):
@@ -185,13 +185,13 @@ class Game:
         Fruit : 2
         """
 
-        state = np.zeros((self.width, self.height), int)
+        state = np.zeros((self.width, self.height, 2), float)
         for snake in self.snakes:
             for x, y in snake.coordinates:
-                state[x, y] = 1
+                state[x, y, 0] = 1
 
         for x, y in self.fruits:
-            state[x, y] = 2
+            state[x, y, 1] = 1
         return state
 
     def get_surrounding_view(self, snake, onehot=False):
