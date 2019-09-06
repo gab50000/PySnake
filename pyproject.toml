@@ -9,9 +9,9 @@ author-email = "gabriel.kabbe@mail.de"
 classifiers = ["License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"]
 requires = [
     "abc_algorithm",
-    "numpy",
-    "fire",
-    "tqdm",
+    "numpy >= 1.16.4",
+    "fire >= 0.2.1",
+    "tqdm >= 4.32.1",
 ]
 
 [tool.flit.scripts]
