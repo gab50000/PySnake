@@ -1,0 +1,18 @@
+[build-system]
+requires = ["flit"]
+build-backend = "flit.buildapi"
+
+[tool.flit.metadata]
+module = "snake"
+author = "Gabriel Kabbe"
+author-email = "gabriel.kabbe@mail.de"
+classifiers = ["License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"]
+requires = [
+    "abc_algorithm",
+    "numpy",
+    "fire",
+    "tqdm",
+]
+
+[tool.flit.scripts]
+snake = "snake.ui:entrypoint"
