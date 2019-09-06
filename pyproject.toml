@@ -3,7 +3,7 @@ requires = ["flit"]
 build-backend = "flit.buildapi"
 
 [tool.flit.metadata]
-module = "snake"
+module = "snakipy"
 author = "Gabriel Kabbe"
 author-email = "gabriel.kabbe@mail.de"
 classifiers = ["License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"]
@@ -15,4 +15,4 @@ requires = [
 ]
 
 [tool.flit.scripts]
-snake = "snake.ui:entrypoint"
+snake = "snakipy.ui:entrypoint"
