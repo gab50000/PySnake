@@ -7,10 +7,10 @@ import fire
 import numpy as np
 from scipy.optimize import minimize
 from tqdm import trange
-
-from main import Game
-from snake import Direction, Snake, NeuroSnake
 from abc_algorithm.main import Swarm
+
+from .main import Game
+from .snake import Direction, Snake, NeuroSnake
 
 
 logger = logging.getLogger(__name__)

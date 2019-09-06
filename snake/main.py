@@ -6,7 +6,7 @@ import sys
 
 import numpy as np
 
-from snake import Direction
+from .snake import Direction
 
 logger = logging.getLogger(__name__)
 

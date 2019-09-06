@@ -5,7 +5,7 @@ import logging
 
 import numpy as np
 
-from neuro import NeuralNet
+from .neuro import NeuralNet
 
 
 logger = logging.getLogger(__name__)
