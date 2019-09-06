@@ -53,10 +53,13 @@ class UI:
 
 
 class Curses(UI):
-    def __init__(self, game, *, debug=False, robot=False, sleep=70):
+    def __init__(
+        self, game, *, debug=False, robot=False, generate_data=False, sleep=70
+    ):
         super().__init__(game)
         self.debug = debug
         self.robot = robot
+        self.generate_data = generate_data
         self.sleep = sleep
 
     def check_input(self, screen):
@@ -97,7 +100,8 @@ class Curses(UI):
 
         while True:
             screen.clear()
-            coords = self.game.reduced_coordinates(player_snake).flatten()
+            # coords = self.game.reduced_coordinates(player_snake).flatten()
+            coords = self.game.state_array.flatten()
             if self.debug:
                 # arr = self.game.reduced_coordinates(player_snake)
                 self.debug_msg(
@@ -120,6 +124,9 @@ class Curses(UI):
                 direction = player_snake.decide_direction(coords)
             else:
                 direction = player_input
+
+            if self.generate_data:
+                pass
 
 
 class LogPositions(UI):
@@ -165,9 +172,7 @@ class ParameterSearch:
                 game_it.send(direction)
             except StopIteration:
                 break
-            direction = player_snake.decide_direction(
-                game.reduced_coordinates(player_snake).flatten()
-            )
+            direction = player_snake.decide_direction(game.state_array.flatten())
         logger.debug("Stopped after %s steps", step)
         return game.rewards[0]
 
@@ -245,7 +250,7 @@ def training(
     logging.basicConfig(level=getattr(logging, log_level.upper()))
     x = width
     y = height if height else x
-    input_size = 6
+    input_size = x * y * 2
     # Reduce y-size by one to avoid curses scroll problems
     game_options = {
         "width": x,
@@ -296,5 +301,5 @@ def training(
         np.save(dna_file, result)
 
 
-if __name__ == "__main__":
+def entrypoint():
     fire.Fire()
