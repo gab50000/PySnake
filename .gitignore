@@ -2,3 +2,4 @@
 !.gitignore
 !*.py
 !snake/
+!pyproject.toml
