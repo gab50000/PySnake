@@ -195,6 +195,8 @@ def main(
     sleep=70,
     border=False,
 ):
+    """Play the game"""
+
     logging.basicConfig(level=logging.DEBUG)
     x, y = curses.wrapper(_get_screen_size)
     if width:
@@ -301,4 +303,5 @@ def training(
 
 
 def entrypoint():
-    fire.Fire()
+    fire.Fire({"main": main, "training": training})
+
