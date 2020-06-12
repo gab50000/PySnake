@@ -11,7 +11,9 @@ from .neuro import NeuralNet
 logger = logging.getLogger(__name__)
 
 
-Direction = Enum("Direction", "NORTH EAST SOUTH WEST")
+Direction = Enum(
+    "Direction", "NORTH NORTHEAST EAST SOUTHEAST SOUTH SOUTHWEST WEST NORTHWEST"
+)
 
 
 class Snake:
@@ -85,4 +87,3 @@ class NeuroSnake(Snake):
         logger.debug("Old direction: %s", self.direction)
         logger.debug("New direction: %s", new_dir)
         return new_dir
-
