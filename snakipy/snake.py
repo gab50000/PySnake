@@ -75,7 +75,7 @@ class NeuroSnake(Snake):
         self.net_output = None
 
     def decide_direction(self, view):
-        dirs = list(Direction)
+        dirs = (Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST)
         if self.direction is None:
             self.direction = random.choice(dirs)
             return self.direction

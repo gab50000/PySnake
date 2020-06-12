@@ -237,10 +237,24 @@ class Game:
                 if (head_x, y) in self.fruits:
                     return True
 
+        # look north-east
+        if direction == Direction.NORTHEAST:
+            for x, y in zip(range(head_x + 1, self.width), reversed(range(head_y))):
+                if (x, y) in self.fruits:
+                    return True
+
         # look east
         if direction == Direction.EAST:
             for x in range(head_x + 1, self.width):
                 if (x, head_y) in self.fruits:
+                    return True
+
+        # look south-east
+        if direction == Direction.SOUTHEAST:
+            for x, y in zip(
+                range(head_x + 1, self.width), range(head_y + 1, self.height)
+            ):
+                if (x, y) in self.fruits:
                     return True
 
         # look south
@@ -249,11 +263,24 @@ class Game:
                 if (head_x, y) in self.fruits:
                     return True
 
+        # look south-west
+        if direction == Direction.SOUTHWEST:
+            for x, y in zip(reversed(range(head_x)), range(head_y + 1, self.height)):
+                if (x, y) in self.fruits:
+                    return True
+
         # look west
         if direction == Direction.WEST:
             for x in reversed(range(head_x)):
                 if (x, head_y) in self.fruits:
                     return True
+
+        # look north-west
+        if direction == Direction.NORTHWEST:
+            for x, y in zip(reversed(range(head_x)), reversed(range(head_y))):
+                if (x, y) in self.fruits:
+                    return True
+
         return False
 
     def reduced_coordinates(self, snake):
@@ -269,7 +296,7 @@ class Game:
         """
         head_x, head_y = snake.coordinates[-1]
         direction = snake.direction
-        result = np.zeros((4, 2))
+        result = np.zeros((8, 2))
 
         # look north
         if self.is_wall_or_snake((head_x, head_y - 1)):
@@ -277,24 +304,48 @@ class Game:
         if self.fruit_ahead((head_x, head_y), Direction.NORTH):
             result[0, 0] = 1
 
+        # look north-east
+        if self.is_wall_or_snake((head_x + 1, head_y - 1)):
+            result[1, 1] = 1
+        if self.fruit_ahead((head_x, head_y), Direction.NORTHEAST):
+            result[1, 0] = 1
+
         # look east
         if self.is_wall_or_snake((head_x + 1, head_y)):
-            result[1, 1] = 1
+            result[2, 1] = 1
         if self.fruit_ahead((head_x, head_y), Direction.EAST):
-            result[1, 0] = 1
+            result[2, 0] = 1
+
+        # look south-east
+        if self.is_wall_or_snake((head_x + 1, head_y + 1)):
+            result[3, 1] = 1
+        if self.fruit_ahead((head_x, head_y), Direction.SOUTHEAST):
+            result[3, 0] = 1
 
         # look south
         if self.is_wall_or_snake((head_x, head_y + 1)):
-            result[2, 1] = 1
+            result[4, 1] = 1
         if self.fruit_ahead((head_x, head_y), Direction.SOUTH):
-            result[2, 0] = 1
+            result[4, 0] = 1
+
+        # look south-west
+        if self.is_wall_or_snake((head_x - 1, head_y + 1)):
+            result[5, 1] = 1
+        if self.fruit_ahead((head_x, head_y), Direction.SOUTHWEST):
+            result[5, 0] = 1
 
         # look west
         if self.is_wall_or_snake((head_x - 1, head_y)):
-            result[3, 1] = 1
+            result[6, 1] = 1
         if self.fruit_ahead((head_x, head_y), Direction.WEST):
-            result[3, 0] = 1
+            result[6, 0] = 1
+
+        # look north-west
+        if self.is_wall_or_snake((head_x - 1, head_y - 1)):
+            result[7, 1] = 1
+        if self.fruit_ahead((head_x, head_y), Direction.NORTHWEST):
+            result[7, 0] = 1
 
         direction_idx = direction.value
         result = np.roll(result, Direction.EAST.value - direction_idx, axis=0)
-        return result[:3]
+        return result
