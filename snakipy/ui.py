@@ -2,6 +2,7 @@
 import curses
 import logging
 import multiprocessing
+from itertools import count
 
 import fire
 import numpy as np
@@ -30,25 +31,38 @@ curses_colors = (
 )
 
 
+def interpret_snake_sensor(arr):
+    ii, jj = np.where(arr)
+
+    result = []
+
+    for i, j in zip(ii, jj):
+        if j == 0:
+            result.append(f"Fruit at {list(Direction)[i].name.title()}")
+        else:
+            result.append(f"Wall at {list(Direction)[i].name.title()}")
+    return "\n".join(result)
+
+
 class UI:
+    """
+    Base class for all user interfaces
+    """
+
     def __init__(self, game: Game, **kwargs):
         self.game = game
 
-    def draw_fruits(self, screen):
-        for x, y in self.game.fruits:
-            screen.addstr(y, x, "O", curses.color_pair(6))
+    def draw_fruits(self, canvas):
+        raise NotImplementedError
 
-    def draw_snake(self, screen, snake):
-        for x, y in snake.coordinates:
-            screen.addstr(y, x, "X", curses.color_pair(3))
-
-    def draw(self, screen):
-        self.draw_fruits(screen)
-        for snake in self.game.snakes:
-            self.draw_snake(screen, snake)
+    def draw(self, canvas):
+        raise NotImplementedError
 
     def run(self):
-        pass
+        raise NotImplementedError
+
+    def check_input(self, canvas):
+        raise NotImplementedError
 
 
 class Curses(UI):
@@ -61,8 +75,21 @@ class Curses(UI):
         self.generate_data = generate_data
         self.sleep = sleep
 
-    def check_input(self, screen):
-        inp = screen.getch()
+    def draw_fruits(self, canvas):
+        for x, y in self.game.fruits:
+            canvas.addstr(y, x, "O", curses.color_pair(6))
+
+    def draw_snake(self, screen, snake):
+        for x, y in snake.coordinates:
+            screen.addstr(y, x, "X", curses.color_pair(3))
+
+    def draw(self, canvas):
+        self.draw_fruits(canvas)
+        for snake in self.game.snakes:
+            self.draw_snake(canvas, snake)
+
+    def check_input(self, canvas):
+        inp = canvas.getch()
         if inp == curses.KEY_UP:
             direction = Direction.NORTH
         elif inp == curses.KEY_DOWN:
@@ -97,10 +124,15 @@ class Curses(UI):
         game_it = iter(game)
         direction = None
 
-        while True:
+        for step in count():
+            logger.debug(step)
             screen.clear()
-            # coords = self.game.reduced_coordinates(player_snake).flatten()
-            coords = self.game.state_array.flatten()
+            coords = self.game.reduced_coordinates(player_snake)
+            fruit_dir = interpret_snake_sensor(coords)
+            if fruit_dir:
+                logger.debug(fruit_dir)
+            coords = coords.flatten()
+            # coords = self.game.state_array.flatten()
             if self.debug:
                 # arr = self.game.reduced_coordinates(player_snake)
                 self.debug_msg(
@@ -110,7 +142,8 @@ class Curses(UI):
                             coords,
                             player_snake.net_output,
                             game.rewards,
-                            player_snake.direction,
+                            step,
+                            # player_snake.direction,
                         ]
                     ),
                 )
@@ -126,19 +159,6 @@ class Curses(UI):
 
             if self.generate_data:
                 pass
-
-
-class LogPositions(UI):
-    def run(self):
-        for _ in self.game:
-            for i, snake in enumerate(self.game.snakes):
-                print(f"{i}) {snake} (reward: {self.game.rewards}")
-
-
-class LogStates(UI):
-    def run(self):
-        for _ in self.game:
-            print(self.game.state_array)
 
 
 class ParameterSearch:
@@ -171,9 +191,13 @@ class ParameterSearch:
                 game_it.send(direction)
             except StopIteration:
                 break
-            direction = player_snake.decide_direction(game.state_array.flatten())
+            direction = player_snake.decide_direction(
+                game.reduced_coordinates(player_snake).flatten()
+            )
         logger.debug("Stopped after %s steps", step)
-        return game.rewards[0]
+        (game_score,) = game.rewards
+        logger.info("Total score: %s", game_score)
+        return game_score
 
 
 def _get_screen_size(screen):
@@ -197,7 +221,7 @@ def main(
 ):
     """Play the game"""
 
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.DEBUG, filename="snake.log", filemode="a")
     x, y = curses.wrapper(_get_screen_size)
     if width:
         x = width
@@ -206,7 +230,7 @@ def main(
         dna = np.load(dna_file)
     else:
         dna = None
-    input_size = 6
+    input_size = 16
 
     game = Game(
         x,
@@ -234,7 +258,7 @@ def main(
 
 def training(
     n_optimize=100,
-    hidden_size=10,
+    hidden_size=5,
     max_steps=100,
     search_radius=1,
     log_level="info",
@@ -248,10 +272,15 @@ def training(
     height=None,
     seed=None,
 ):
-    logging.basicConfig(level=getattr(logging, log_level.upper()))
+    logging.basicConfig(
+        level=getattr(logging, log_level.upper()),
+        filename="snaketrain.log",
+        filemode="w",
+    )
     x = width
     y = height if height else x
-    input_size = x * y * 2
+    input_size = 16
+    out_size = 3
     # Reduce y-size by one to avoid curses scroll problems
     game_options = {
         "width": x,
@@ -278,7 +307,7 @@ def training(
             dna = None
     else:
         dna = np.random.normal(
-            size=(input_size + 1) * hidden_size + (hidden_size + 1) * 3,
+            size=(input_size + 1) * hidden_size + (hidden_size + 1) * out_size,
             loc=0,
             scale=1.0,
         )
@@ -288,7 +317,7 @@ def training(
     )
     swarm = Swarm(
         ui.benchmark,
-        (input_size + 1) * hidden_size + (hidden_size + 1) * 3,
+        (input_size + 1) * hidden_size + (hidden_size + 1) * out_size,
         n_employed=n_employed,
         n_onlooker=n_onlooker,
         limit=10,
@@ -304,4 +333,3 @@ def training(
 
 def entrypoint():
     fire.Fire({"main": main, "training": training})
-
