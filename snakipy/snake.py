@@ -48,6 +48,11 @@ class Snake:
             (Direction.EAST, Direction.WEST),
             (Direction.WEST, Direction.EAST),
         ]:
+            logger.debug(
+                "180° turn from %s to %s not allowed",
+                self.direction.name.title(),
+                new_direction.name.title(),
+            )
             new_direction = self.direction
 
         if new_direction == Direction.NORTH:
