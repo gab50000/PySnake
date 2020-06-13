@@ -76,7 +76,7 @@ class Game:
         while True:
             direction = yield
             if self.player_snake:
-                self.punish_circles(self.player_snake, direction)
+                # self.punish_circles(self.player_snake, direction)
                 self.player_snake.update(direction)
             for snake in self.snakes:
                 if snake is not self.player_snake:
@@ -106,7 +106,13 @@ class Game:
                 self.rng.randint(0, self.width - 1),
                 self.rng.randint(0, self.height - 1),
             )
-            self.fruits.append((new_x, new_y))
+            self.add_fruit(new_x, new_y)
+
+    def add_fruit(self, x, y):
+        self.fruits.append((x, y))
+
+    def clear_fruits(self):
+        self.fruits = []
 
     def update_distances(self):
         new_distances = self.determine_fruit_distances()
@@ -119,8 +125,8 @@ class Game:
 
             if new_dist < old_dist:
                 self.rewards[idx] += DISTANCE_REWARD
-            elif new_dist > old_dist:
-                self.rewards[idx] -= DISTANCE_REWARD + 1
+            # elif new_dist > old_dist:
+            #     self.rewards[idx] -= DISTANCE_REWARD + 1
             self.closest_distance[idx] = new_dist
 
     def determine_fruit_distances(self):
@@ -285,10 +291,11 @@ class Game:
 
     def reduced_coordinates(self, snake):
         """
-        Returns an array of length three.
-        If the first entry is one, there is a fruit left to the snake.
-        If the second entry is one, there is a fruit ahead of the snake.
-        If the third entry is one, there is a fruit right of the snake.
+        Returns an array of length eight.
+        If the fruit is:
+            * in front of the snake: arr[0, 0] == 1
+            * in front right of the snake: arr[1, 0] == 1
+            * right of the snake: arr[2, 0] == 1
 
         Parameters
         ----------
@@ -347,5 +354,5 @@ class Game:
             result[7, 0] = 1
 
         direction_idx = direction.value
-        result = np.roll(result, Direction.EAST.value - direction_idx, axis=0)
+        result = np.roll(result, Direction.NORTH.value - direction_idx, axis=0)
         return result
