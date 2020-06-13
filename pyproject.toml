@@ -15,4 +15,4 @@ requires = [
 ]
 
 [tool.flit.scripts]
-snake = "snakipy.ui:entrypoint"
+snake = "snakipy.main:entrypoint"
