@@ -27,7 +27,7 @@ curses_colors = (
 
 FRUIT_REWARD = 10
 DEATH_REWARD = -50
-DISTANCE_REWARD = 2
+DISTANCE_REWARD = 0.4
 
 
 class Game:
@@ -75,8 +75,9 @@ class Game:
 
         while True:
             direction = yield
+            logger.debug("New direction: %s", direction)
             if self.player_snake:
-                # self.punish_circles(self.player_snake, direction)
+                self.punish_circles(self.player_snake, direction)
                 self.player_snake.update(direction)
             for snake in self.snakes:
                 if snake is not self.player_snake:
@@ -91,7 +92,7 @@ class Game:
                 break
 
     def punish_circles(self, snake, new_direction):
-        dir_list = list(Direction)
+        dir_list = [Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST]
         dir_idx = dir_list.index(snake.direction)
         snake_idx = self.snakes.index(snake)
         i1 = (dir_idx + 1) % 4
@@ -125,8 +126,8 @@ class Game:
 
             if new_dist < old_dist:
                 self.rewards[idx] += DISTANCE_REWARD
-            # elif new_dist > old_dist:
-            #     self.rewards[idx] -= DISTANCE_REWARD + 1
+            elif new_dist > old_dist:
+                self.rewards[idx] -= DISTANCE_REWARD
             self.closest_distance[idx] = new_dist
 
     def determine_fruit_distances(self):
@@ -307,50 +308,66 @@ class Game:
 
         # look north
         if self.is_wall_or_snake((head_x, head_y - 1)):
+            logger.debug("Wall at north")
             result[0, 1] = 1
         if self.fruit_ahead((head_x, head_y), Direction.NORTH):
+            logger.debug("Fruit at north")
             result[0, 0] = 1
 
         # look north-east
         if self.is_wall_or_snake((head_x + 1, head_y - 1)):
+            logger.debug("Wall at north-east")
             result[1, 1] = 1
         if self.fruit_ahead((head_x, head_y), Direction.NORTHEAST):
+            logger.debug("Fruit at north-east")
             result[1, 0] = 1
 
         # look east
         if self.is_wall_or_snake((head_x + 1, head_y)):
+            logger.debug("Wall at east")
             result[2, 1] = 1
         if self.fruit_ahead((head_x, head_y), Direction.EAST):
+            logger.debug("Fruit at east")
             result[2, 0] = 1
 
         # look south-east
         if self.is_wall_or_snake((head_x + 1, head_y + 1)):
+            logger.debug("Wall at south-east")
             result[3, 1] = 1
         if self.fruit_ahead((head_x, head_y), Direction.SOUTHEAST):
+            logger.debug("Fruit at south-east")
             result[3, 0] = 1
 
         # look south
         if self.is_wall_or_snake((head_x, head_y + 1)):
+            logger.debug("Wall at south")
             result[4, 1] = 1
         if self.fruit_ahead((head_x, head_y), Direction.SOUTH):
+            logger.debug("Wall at south")
             result[4, 0] = 1
 
         # look south-west
         if self.is_wall_or_snake((head_x - 1, head_y + 1)):
+            logger.debug("Wall at south-west")
             result[5, 1] = 1
         if self.fruit_ahead((head_x, head_y), Direction.SOUTHWEST):
+            logger.debug("Fruit at south-west")
             result[5, 0] = 1
 
         # look west
         if self.is_wall_or_snake((head_x - 1, head_y)):
+            logger.debug("Wall at west")
             result[6, 1] = 1
         if self.fruit_ahead((head_x, head_y), Direction.WEST):
+            logger.debug("Fruit at west")
             result[6, 0] = 1
 
         # look north-west
         if self.is_wall_or_snake((head_x - 1, head_y - 1)):
+            logger.debug("Wall at north-west")
             result[7, 1] = 1
         if self.fruit_ahead((head_x, head_y), Direction.NORTHWEST):
+            logger.debug("Fruit at north-west")
             result[7, 0] = 1
 
         direction_idx = direction.value
