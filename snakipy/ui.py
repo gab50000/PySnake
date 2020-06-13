@@ -51,6 +51,8 @@ class UI:
     game: Game
     n_steps: Optional[int] = None
     debug: bool = False
+    robot: bool = False
+    sleep: int = 70
 
     def draw(self, canvas):
         raise NotImplementedError
@@ -120,12 +122,6 @@ class UI:
 
 @dataclass()
 class Curses(UI):
-    debug: bool = False
-    robot: bool = False
-    generate_data: bool = False
-    sleep: int = 70
-    n_steps: Optional[int] = None
-
     def draw_fruit(self, canvas, x, y):
         canvas.addstr(y, x, "O", curses.color_pair(6))
 
