@@ -1,6 +1,6 @@
 import logging
 
-from snakipy.main import Game
+from snakipy.game import Game
 from snakipy.snake import NeuroSnake
 
 

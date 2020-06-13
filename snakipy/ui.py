@@ -7,7 +7,7 @@ import fire
 import numpy as np
 from abc_algorithm.main import Swarm
 
-from .main import Game
+from .game import Game
 from .optimize import ParameterSearch
 from .snake import Direction, NeuroSnake
 
