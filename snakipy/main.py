@@ -1,8 +1,5 @@
 import curses
-from enum import Enum
 import logging
-import random
-import sys
 
 import numpy as np
 
@@ -66,7 +63,7 @@ class Game:
         self.max_number_of_fruits = max_number_of_fruits
         self.max_number_of_snakes = max_number_of_snakes
         self.rewards = [0 for s in snakes]
-        self.closest_distance = [None for s in snakes]
+        self.closest_distance = [None for _ in snakes]
         self.rng = np.random.RandomState(seed)
         self.update_fruits()
 
@@ -201,31 +198,6 @@ class Game:
             state[x, y, 1] = 1
         return state
 
-    def get_surrounding_view(self, snake, onehot=False):
-        vs = self.view_size
-        idx = self.snakes.index(snake)
-        arr = self.state_array
-        x, y = self.snakes[idx].coordinates[-1]
-        view = np.roll(arr, (arr.shape[0] // 2 - x, arr.shape[1] // 2 - y), axis=(0, 1))
-        view = view[
-            view.shape[0] // 2 - vs + 1 : view.shape[0] // 2 + vs,
-            view.shape[1] // 2 - vs + 1 : view.shape[1] // 2 + vs,
-        ].T
-
-        if onehot:
-            vec = np.zeros((*view.shape, 2), int)
-            nonzero = view > 0
-            vec[nonzero, view[nonzero] - 1] = 1
-            return vec
-
-        return view
-
-    def coordinate_occupied(self, coord):
-        if coord in self.fruits:
-            return 1
-        if any(coord in snake.coordinates for snake in self.snakes):
-            return 2
-
     def is_wall_or_snake(self, coord):
         if self.border:
             if coord[0] in (-1, self.width) or coord[1] in (-1, self.height):
@@ -297,6 +269,7 @@ class Game:
             * in front of the snake: arr[0, 0] == 1
             * in front right of the snake: arr[1, 0] == 1
             * right of the snake: arr[2, 0] == 1
+            ...
 
         Parameters
         ----------
