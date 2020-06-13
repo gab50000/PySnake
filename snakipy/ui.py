@@ -45,6 +45,9 @@ class UI:
     Base class for all user interfaces
     """
 
+    n_steps = None
+    debug = False
+
     def __init__(self, game: Game, **kwargs):
         self.game = game
 
@@ -63,6 +66,58 @@ class UI:
 
     def check_input(self, canvas):
         raise NotImplementedError
+
+    def _loop(self, canvas):
+        y, x = canvas.getmaxyx()
+        assert (
+            self.game.width <= x and self.game.height <= y
+        ), f"Wrong game dimensions {self.game.width}, {self.game.height} != {x}, {y}!"
+        y -= 1
+        game = self.game
+        player_snake = self.game.player_snake
+        curses.curs_set(0)
+        canvas.nodelay(True)
+
+        for i in range(1, 11):
+            curses.init_pair(i, curses_colors[i], curses.COLOR_BLACK)
+        game_it = iter(game)
+        direction = None
+
+        for step in islice(count(), self.n_steps):
+            logger.debug(step)
+            canvas.clear()
+            coords = self.game.reduced_coordinates(player_snake)
+            fruit_dir = interpret_snake_sensor(coords)
+            if fruit_dir:
+                logger.debug(fruit_dir)
+            coords = coords.flatten()
+            # coords = self.game.state_array.flatten()
+            if self.debug:
+                # arr = self.game.reduced_coordinates(player_snake)
+                self.debug_msg(
+                    canvas,
+                    str(
+                        [
+                            coords,
+                            player_snake.net_output,
+                            game.rewards,
+                            step,
+                            # player_snake.direction,
+                        ]
+                    ),
+                )
+            self.draw(canvas)
+            canvas.refresh()
+            curses.napms(self.sleep)
+            game_it.send(direction)
+            player_input = self.check_input(canvas)
+            if player_input is None and self.robot:
+                direction = player_snake.decide_direction(coords)
+            else:
+                direction = player_input
+
+            if self.generate_data:
+                pass
 
 
 class Curses(UI):
@@ -114,58 +169,6 @@ class Curses(UI):
 
     def debug_msg(self, screen, msg):
         screen.addstr(0, 0, msg)
-
-    def _loop(self, screen):
-        y, x = screen.getmaxyx()
-        assert (
-            self.game.width <= x and self.game.height <= y
-        ), f"Wrong game dimensions {self.game.width}, {self.game.height} != {x}, {y}!"
-        y -= 1
-        game = self.game
-        player_snake = self.game.player_snake
-        curses.curs_set(0)
-        screen.nodelay(True)
-
-        for i in range(1, 11):
-            curses.init_pair(i, curses_colors[i], curses.COLOR_BLACK)
-        game_it = iter(game)
-        direction = None
-
-        for step in islice(count(), self.n_steps):
-            logger.debug(step)
-            screen.clear()
-            coords = self.game.reduced_coordinates(player_snake)
-            fruit_dir = interpret_snake_sensor(coords)
-            if fruit_dir:
-                logger.debug(fruit_dir)
-            coords = coords.flatten()
-            # coords = self.game.state_array.flatten()
-            if self.debug:
-                # arr = self.game.reduced_coordinates(player_snake)
-                self.debug_msg(
-                    screen,
-                    str(
-                        [
-                            coords,
-                            player_snake.net_output,
-                            game.rewards,
-                            step,
-                            # player_snake.direction,
-                        ]
-                    ),
-                )
-            self.draw(screen)
-            screen.refresh()
-            curses.napms(self.sleep)
-            game_it.send(direction)
-            player_input = self.check_input(screen)
-            if player_input is None and self.robot:
-                direction = player_snake.decide_direction(coords)
-            else:
-                direction = player_input
-
-            if self.generate_data:
-                pass
 
 
 def _get_screen_size(screen):
