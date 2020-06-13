@@ -128,6 +128,9 @@ class Game:
             self.closest_distance[idx] = new_dist
 
     def determine_fruit_distances(self):
+        if not self.fruits:
+            return [0 for _ in self.snakes]
+
         return [
             min([self.fruit_distance(snake, fruit) for fruit in self.fruits])
             for snake in self.snakes

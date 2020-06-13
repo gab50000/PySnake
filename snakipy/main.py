@@ -114,11 +114,11 @@ def training(
             scale=1.0,
         )
 
-    ui = ParameterSearch(
+    opt = ParameterSearch(
         game_options, snake_options, max_steps=max_steps, n_average=n_average, dna=dna
     )
     swarm = Swarm(
-        ui.benchmark,
+        opt.benchmark,
         (input_size + 1) * hidden_size + (hidden_size + 1) * out_size,
         n_employed=n_employed,
         n_onlooker=n_onlooker,
@@ -131,6 +131,15 @@ def training(
     for result in swarm.run():
         logger.info("Saving to %s", dna_file)
         np.save(dna_file, result)
+        game = Game(
+            **game_options,
+            player_snake=NeuroSnake(**snake_options, dna=np.load(dna_file))
+        )
+        ui = Curses(game, robot=True, n_steps=max_steps)
+        try:
+            ui.run()
+        except StopIteration:
+            pass
 
 
 def entrypoint():

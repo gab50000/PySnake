@@ -1,9 +1,10 @@
 """Classes for rendering the Snake game"""
 import curses
 import logging
-from itertools import count
+from itertools import count, islice
 
 import numpy as np
+import pygame
 
 from .game import Game
 from .snake import Direction
@@ -47,10 +48,14 @@ class UI:
     def __init__(self, game: Game, **kwargs):
         self.game = game
 
-    def draw_fruits(self, canvas):
+    def draw(self, canvas):
         raise NotImplementedError
 
-    def draw(self, canvas):
+    def draw_fruits(self, canvas):
+        for x, y in self.game.fruits:
+            self.draw_fruit(canvas, x, y)
+
+    def draw_fruit(self, canvas, x, y):
         raise NotImplementedError
 
     def run(self):
@@ -62,17 +67,24 @@ class UI:
 
 class Curses(UI):
     def __init__(
-        self, game, *, debug=False, robot=False, generate_data=False, sleep=70
+        self,
+        game,
+        *,
+        debug=False,
+        robot=False,
+        generate_data=False,
+        sleep=70,
+        n_steps=None,
     ):
         super().__init__(game)
         self.debug = debug
         self.robot = robot
         self.generate_data = generate_data
         self.sleep = sleep
+        self.n_steps = n_steps
 
-    def draw_fruits(self, canvas):
-        for x, y in self.game.fruits:
-            canvas.addstr(y, x, "O", curses.color_pair(6))
+    def draw_fruit(self, canvas, x, y):
+        canvas.addstr(y, x, "O", curses.color_pair(6))
 
     def draw_snake(self, screen, snake):
         for x, y in snake.coordinates:
@@ -119,7 +131,7 @@ class Curses(UI):
         game_it = iter(game)
         direction = None
 
-        for step in count():
+        for step in islice(count(), self.n_steps):
             logger.debug(step)
             screen.clear()
             coords = self.game.reduced_coordinates(player_snake)
