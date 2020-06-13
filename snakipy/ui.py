@@ -1,7 +1,9 @@
 """Classes for rendering the Snake game"""
 import curses
 import logging
+from dataclasses import dataclass
 from itertools import count, islice
+from typing import Optional
 
 import numpy as np
 import pygame
@@ -40,16 +42,15 @@ def interpret_snake_sensor(arr):
     return "\n".join(result)
 
 
+@dataclass
 class UI:
     """
     Base class for all user interfaces
     """
 
-    n_steps = None
-    debug = False
-
-    def __init__(self, game: Game, **kwargs):
-        self.game = game
+    game: Game
+    n_steps: Optional[int] = None
+    debug: bool = False
 
     def draw(self, canvas):
         raise NotImplementedError
@@ -116,27 +117,14 @@ class UI:
             else:
                 direction = player_input
 
-            if self.generate_data:
-                pass
 
-
+@dataclass()
 class Curses(UI):
-    def __init__(
-        self,
-        game,
-        *,
-        debug=False,
-        robot=False,
-        generate_data=False,
-        sleep=70,
-        n_steps=None,
-    ):
-        super().__init__(game)
-        self.debug = debug
-        self.robot = robot
-        self.generate_data = generate_data
-        self.sleep = sleep
-        self.n_steps = n_steps
+    debug: bool = False
+    robot: bool = False
+    generate_data: bool = False
+    sleep: int = 70
+    n_steps: Optional[int] = None
 
     def draw_fruit(self, canvas, x, y):
         canvas.addstr(y, x, "O", curses.color_pair(6))
@@ -169,6 +157,20 @@ class Curses(UI):
 
     def debug_msg(self, screen, msg):
         screen.addstr(0, 0, msg)
+
+
+class PygameUI(UI):
+    def draw(self, canvas):
+        pass
+
+    def draw_fruit(self, canvas, x, y):
+        pass
+
+    def run(self):
+        pass
+
+    def check_input(self, canvas):
+        pass
 
 
 def _get_screen_size(screen):
