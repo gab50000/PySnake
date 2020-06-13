@@ -81,7 +81,7 @@ class NeuroSnake(Snake):
             return self.direction
 
         self.net_output = self.net.forward(view)
-        dir_idx = self.direction.value - 1
+        dir_idx = dirs.index(self.direction)
         idx = np.argmax(self.net_output) - 1
         new_dir = dirs[(dir_idx + idx) % 4]
         logger.debug("Old direction: %s", self.direction)
