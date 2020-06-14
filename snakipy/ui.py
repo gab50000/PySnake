@@ -88,9 +88,6 @@ class UI:
         player_snake = self.game.player_snake
         curses.curs_set(0)
         canvas.nodelay(True)
-
-        for i in range(1, 11):
-            curses.init_pair(i, curses_colors[i], curses.COLOR_BLACK)
         game_it = iter(game)
         direction = None
 
@@ -153,6 +150,11 @@ class Curses(UI):
 
     def run(self):
         curses.wrapper(self._loop)
+
+    def _loop(self, canvas):
+        for i in range(1, 11):
+            curses.init_pair(i, curses_colors[i], curses.COLOR_BLACK)
+        super()._loop(canvas)
 
     def debug_msg(self, screen, msg):
         screen.addstr(0, 0, msg)
