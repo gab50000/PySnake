@@ -1,9 +1,11 @@
 import curses
 import logging
+from dataclasses import dataclass, field
+from typing import List, Optional
 
 import numpy as np
 
-from snakipy.snake import Direction, NeuroSnake
+from snakipy.snake import Direction, NeuroSnake, Snake
 
 logger = logging.getLogger(__name__)
 
@@ -27,44 +29,31 @@ DEATH_REWARD = -50
 DISTANCE_REWARD = 0.4
 
 
+@dataclass
 class Game:
     """
     Contains and manages the game state
     """
 
-    def __init__(
-        self,
-        width,
-        height,
-        *,
-        snakes=None,
-        player_snake=None,
-        max_number_of_fruits=1,
-        max_number_of_snakes=1,
-        log=None,
-        view_size=3,
-        border=False,
-        seed=None
-    ):
+    width: int
+    height: int
+    snakes: List[Snake] = field(default_factory=list)
+    player_snake: Optional[Snake] = None
+    max_number_of_fruits: int = 1
+    max_number_of_snakes: int = 1
+    border: bool = False
+    seed: Optional[int] = None
+
+    def __post_init__(self):
         self.fruits = []
 
-        if snakes is None and player_snake is None:
+        if self.snakes is None and self.player_snake is None:
             raise ValueError("There are no snakes!")
-        if snakes is None:
-            snakes = []
-        self.snakes = snakes
-        self.player_snake = player_snake
-        if player_snake:
-            self.snakes.append(player_snake)
-        self.width, self.height = width, height
-        self.log = log
-        self.view_size = view_size
-        self.border = border
-        self.max_number_of_fruits = max_number_of_fruits
-        self.max_number_of_snakes = max_number_of_snakes
-        self.rewards = [0 for s in snakes]
-        self.closest_distance = [None for _ in snakes]
-        self.rng = np.random.RandomState(seed)
+        if self.player_snake:
+            self.snakes.append(self.player_snake)
+        self.rewards = [0 for s in self.snakes]
+        self.closest_distance = [None for _ in self.snakes]
+        self.rng = np.random.RandomState(self.seed)
         self.update_fruits()
 
     def __iter__(self):
