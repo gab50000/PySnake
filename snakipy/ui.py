@@ -88,6 +88,9 @@ class UI:
     def clear(self, canvas):
         raise NotImplementedError
 
+    def debug_msg(self, canvas, message):
+        pass
+
     def _loop(self, canvas):
         x, y = self.get_canvas_size(canvas)
         assert (
