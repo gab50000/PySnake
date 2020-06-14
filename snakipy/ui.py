@@ -55,7 +55,9 @@ class UI:
     sleep: int = 70
 
     def draw(self, canvas):
-        raise NotImplementedError
+        self.draw_fruits(canvas)
+        for snake in self.game.snakes:
+            self.draw_snake(canvas, snake)
 
     def draw_fruits(self, canvas):
         for x, y in self.game.fruits:
@@ -120,7 +122,7 @@ class UI:
                 direction = player_input
 
 
-@dataclass()
+@dataclass
 class Curses(UI):
     def draw_fruit(self, canvas, x, y):
         canvas.addstr(y, x, "O", curses.color_pair(6))
@@ -128,11 +130,6 @@ class Curses(UI):
     def draw_snake(self, screen, snake):
         for x, y in snake.coordinates:
             screen.addstr(y, x, "X", curses.color_pair(3))
-
-    def draw(self, canvas):
-        self.draw_fruits(canvas)
-        for snake in self.game.snakes:
-            self.draw_snake(canvas, snake)
 
     def check_input(self, canvas):
         inp = canvas.getch()
