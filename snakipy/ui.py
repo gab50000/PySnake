@@ -52,7 +52,10 @@ class UI:
     n_steps: Optional[int] = None
     debug: bool = False
     robot: bool = False
-    sleep: int = 70
+    fps: int = 20
+
+    def __post_init__(self):
+        self.sleep = 1 / self.fps
 
     def draw(self, canvas):
         self.draw_fruits(canvas)
@@ -178,7 +181,7 @@ class CursesUI(UI):
         canvas.refresh()
 
     def nap(self):
-        curses.napms(self.sleep)
+        curses.napms(int(1000 * self.sleep))
 
     @staticmethod
     def _get_screen_size(screen):
@@ -203,7 +206,7 @@ class PygameUI(UI):
         self._pixel_width = self.canvas_size[1] // self.size[1]
 
     def nap(self):
-        self._fps.tick(self.sleep)
+        self._fps.tick(self.fps)
 
     def clear(self, canvas):
         canvas.fill((0, 0, 0))
