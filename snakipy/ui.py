@@ -63,6 +63,9 @@ class UI:
         for x, y in self.game.fruits:
             self.draw_fruit(canvas, x, y)
 
+    def draw_snake(self, canvas, snake):
+        raise NotImplementedError
+
     def draw_fruit(self, canvas, x, y):
         raise NotImplementedError
 
