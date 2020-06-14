@@ -40,6 +40,7 @@ class Snake:
             new_direction = self.direction
 
         head_x, head_y = self.coordinates[-1]
+        logger.debug("Old position: (%s, %s)", head_x, head_y)
 
         # Do not allow 180° turnaround
         if (new_direction, self.direction) in [
@@ -64,6 +65,7 @@ class Snake:
         else:
             new_x, new_y = head_x - 1, head_y
 
+        logger.debug("New position: (%s, %s)", new_x, new_y)
         self.direction = new_direction
 
         self.coordinates.append((new_x, new_y))
