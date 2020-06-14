@@ -8,7 +8,7 @@ import numpy as np
 from snakipy.game import Game
 from snakipy.optimize import ParameterSearch
 from snakipy.snake import NeuroSnake, Direction
-from snakipy.ui import _get_screen_size, Curses, logger
+from snakipy.ui import _get_screen_size, CursesUI, PygameUI
 
 
 def main(
@@ -50,7 +50,7 @@ def main(
         max_number_of_fruits=n_fruits,
         border=border,
     )
-    ui = Curses(game, debug=debug, robot=robot, sleep=sleep)
+    ui = CursesUI(game, debug=debug, robot=robot, sleep=sleep)
     try:
         ui.run()
     except StopIteration:
@@ -135,7 +135,7 @@ def training(
             **game_options,
             player_snake=NeuroSnake(**snake_options, dna=np.load(dna_file))
         )
-        ui = Curses(game, robot=True, n_steps=max_steps)
+        ui = CursesUI(game, robot=True, n_steps=max_steps)
         try:
             ui.run()
         except StopIteration:

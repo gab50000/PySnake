@@ -3,7 +3,7 @@ import curses
 import logging
 from dataclasses import dataclass
 from itertools import count, islice
-from typing import Optional
+from typing import Optional, Tuple
 
 import numpy as np
 import pygame
@@ -67,7 +67,7 @@ class UI:
         for x, y in snake.coordinates:
             self.draw_snake_element(canvas, x, y)
 
-    def draw_snake_element(self, canvas, snake):
+    def draw_snake_element(self, canvas, x, y):
         raise NotImplementedError
 
     def draw_fruit(self, canvas, x, y):
@@ -82,6 +82,9 @@ class UI:
     def get_canvas_size(self, canvas):
         raise NotImplementedError
 
+    def clear(self, canvas):
+        raise NotImplementedError
+
     def _loop(self, canvas):
         x, y = self.get_canvas_size(canvas)
         assert (
@@ -90,14 +93,12 @@ class UI:
         y -= 1
         game = self.game
         player_snake = self.game.player_snake
-        curses.curs_set(0)
-        canvas.nodelay(True)
         game_it = iter(game)
         direction = None
 
         for step in islice(count(), self.n_steps):
             logger.debug(step)
-            canvas.clear()
+            self.clear(canvas)
             coords = self.game.reduced_coordinates(player_snake)
             fruit_dir = interpret_snake_sensor(coords)
             if fruit_dir:
@@ -119,8 +120,8 @@ class UI:
                     ),
                 )
             self.draw(canvas)
-            canvas.refresh()
-            curses.napms(self.sleep)
+            self.refresh(canvas)
+            self.nap()
             game_it.send(direction)
             player_input = self.check_input(canvas)
             if player_input is None and self.robot:
@@ -128,9 +129,16 @@ class UI:
             else:
                 direction = player_input
 
+    def nap(self):
+        raise NotImplementedError
+        curses.napms(self.sleep)
+
+    def refresh(self, canvas):
+        raise NotImplementedError
+
 
 @dataclass
-class Curses(UI):
+class CursesUI(UI):
     def draw_fruit(self, canvas, x, y):
         canvas.addstr(y, x, "O", curses.color_pair(6))
 
@@ -155,6 +163,8 @@ class Curses(UI):
         curses.wrapper(self._loop)
 
     def _loop(self, canvas):
+        curses.curs_set(0)
+        canvas.nodelay(True)
         for i in range(1, 11):
             curses.init_pair(i, curses_colors[i], curses.COLOR_BLACK)
         super()._loop(canvas)
@@ -166,22 +176,34 @@ class Curses(UI):
         y, x = canvas.getmaxyx()
         return x, y
 
+    def clear(self, canvas):
+        canvas.clear()
 
+    def refresh(self, canvas):
+        canvas.refresh()
+
+    def nap(self):
+        curses.napms(self.sleep)
+
+
+@dataclass
 class PygameUI(UI):
-    def draw_snake(self, canvas, snake):
-        pass
+    size: Tuple[int, int] = (800, 600)
+
+    def draw_snake_element(self, canvas, x, y):
+        pygame.draw.rect(canvas, pygame.color.Color((0, 255, 0)), (x, y), 3)
 
     def get_canvas_size(self, canvas):
-        pass
-
-    def draw(self, canvas):
-        pass
+        return self.size
 
     def draw_fruit(self, canvas, x, y):
-        pass
+        pygame.draw.circle(canvas, pygame.color.Color((255, 0, 0)), (x, y), 3)
 
     def run(self):
-        pass
+        pygame.init()
+        fps = pygame.time.Clock()
+        window = pygame.display.set_mode(self.size)
+        self._loop(window)
 
     def check_input(self, canvas):
         pass
