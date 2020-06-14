@@ -64,6 +64,10 @@ class UI:
             self.draw_fruit(canvas, x, y)
 
     def draw_snake(self, canvas, snake):
+        for x, y in snake.coordinates:
+            self.draw_snake_element(canvas, x, y)
+
+    def draw_snake_element(self, canvas, snake):
         raise NotImplementedError
 
     def draw_fruit(self, canvas, x, y):
@@ -130,9 +134,8 @@ class Curses(UI):
     def draw_fruit(self, canvas, x, y):
         canvas.addstr(y, x, "O", curses.color_pair(6))
 
-    def draw_snake(self, screen, snake):
-        for x, y in snake.coordinates:
-            screen.addstr(y, x, "X", curses.color_pair(3))
+    def draw_snake_element(self, canvas, x, y):
+        canvas.addstr(y, x, "X", curses.color_pair(3))
 
     def check_input(self, canvas):
         inp = canvas.getch()
@@ -165,6 +168,12 @@ class Curses(UI):
 
 
 class PygameUI(UI):
+    def draw_snake(self, canvas, snake):
+        pass
+
+    def get_canvas_size(self, canvas):
+        pass
+
     def draw(self, canvas):
         pass
 
