@@ -202,8 +202,8 @@ class PygameUI(UI):
     canvas_size: Tuple[int, int] = (800, 600)
 
     def __post_init__(self):
-        self._pixel_height = self.canvas_size[0] // self.size[0]
-        self._pixel_width = self.canvas_size[1] // self.size[1]
+        self._pixel_width = self.canvas_size[0] // self.size[0]
+        self._pixel_height = self.canvas_size[1] // self.size[1]
 
     def nap(self):
         self._fps.tick(self.fps)
@@ -244,4 +244,14 @@ class PygameUI(UI):
         self._loop(window)
 
     def check_input(self, canvas):
-        pass
+        events = pygame.event.get()
+        for event in events:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    return Direction.WEST
+                elif event.key == pygame.K_RIGHT:
+                    return Direction.EAST
+                elif event.key == pygame.K_DOWN:
+                    return Direction.SOUTH
+                elif event.key == pygame.K_UP:
+                    return Direction.NORTH
