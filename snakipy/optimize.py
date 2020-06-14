@@ -164,6 +164,7 @@ def create_snakes(size, n_x, n_y, dnas=None):
 
 
 def snake_evolution(dnafile):
+    logging.basicConfig(level=logging.INFO)
     size = (80, 60)
 
     snakes = create_snakes(size, 8, 6)

@@ -8,7 +8,7 @@ from typing import Optional, Tuple
 import numpy as np
 import pygame
 
-from snakipy.game import Game
+from snakipy.game import Game, BoardState
 from snakipy.snake import Direction, NeuroSnake
 
 logger = logging.getLogger(__name__)
@@ -58,17 +58,12 @@ class UI:
         self.sleep = 1 / self.fps
 
     def draw(self, canvas):
-        self.draw_fruits(canvas)
-        for snake in self.game.snakes:
-            self.draw_snake(canvas, snake)
-
-    def draw_fruits(self, canvas):
-        for x, y in self.game.fruits:
-            self.draw_fruit(canvas, x, y)
-
-    def draw_snake(self, canvas, snake):
-        for x, y in snake.coordinates:
-            self.draw_snake_element(canvas, x, y)
+        for y, row in enumerate(self.game.board):
+            for x, elem in enumerate(row):
+                if elem == BoardState.FRUIT:
+                    self.draw_fruit(canvas, x, y)
+                elif elem == BoardState.SNAKE:
+                    self.draw_snake_element(canvas, x, y)
 
     def draw_snake_element(self, canvas, x, y):
         raise NotImplementedError

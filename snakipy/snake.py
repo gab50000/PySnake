@@ -16,6 +16,10 @@ Direction = Enum(
 )
 
 
+def direction_to_vector(direction):
+    return {Direction.NORTH: (0, -1), Direction.NORTHEAST: (1, -1)}
+
+
 class Snake:
     def __init__(self, x, y, max_x, max_y, direction):
         self.coordinates = deque([(x, y)])
@@ -24,8 +28,16 @@ class Snake:
         self.length = 1
 
     def __repr__(self):
-        x, y = self.coordinates[-1]
+        x, y = self.head
         return f"Snake({x}, {y})"
+
+    @property
+    def head(self):
+        return self.coordinates[-1]
+
+    @property
+    def tail(self):
+        return self.coordinates[0]
 
     @classmethod
     def random_init(cls, width, height, **kwargs):

@@ -1,4 +1,5 @@
 import curses
+from enum import Enum, auto
 import logging
 from dataclasses import dataclass, field
 from typing import List, Optional
@@ -24,6 +25,12 @@ curses_colors = (
 )
 
 
+class BoardState(Enum):
+    EMPTY = auto()
+    SNAKE = auto()
+    FRUIT = auto()
+
+
 FRUIT_REWARD = 10
 DEATH_REWARD = -50
 DISTANCE_REWARD = 0.4
@@ -45,7 +52,7 @@ class Game:
     seed: Optional[int] = None
 
     def __post_init__(self):
-        self.fruits = []
+        self.fruits = set()
 
         if self.snakes is None and self.player_snake is None:
             raise ValueError("There are no snakes!")
@@ -62,16 +69,24 @@ class Game:
         while True:
             direction = yield
             logger.debug("New direction: %s", direction)
-            for snake in self.snakes:
+
+            snake_positions = {
+                coord for snake in self.snakes for coord in snake.coordinates
+            }
+            snake_tail_positions = {snake.tail for snake in self.snakes}
+
+            for idx, snake in enumerate(self.snakes):
                 if not isinstance(snake, NeuroSnake):
                     continue
 
                 coords = self.reduced_coordinates(snake).flatten()
                 self.punish_circles(snake, direction)
                 direction = snake.decide_direction(coords)
-                snake.update(direction)
-
-                self.check_collisions()
+                snk_game_over = self.check_collision(
+                    idx, direction, snake_positions, snake_tail_positions
+                )
+                if not snk_game_over:
+                    snake.update(direction)
 
             if not self.snakes:
                 game_over = True
@@ -134,6 +149,20 @@ class Game:
         x, y = snake.coordinates[-1]
         xf, yf = fruit
         return abs(x - xf) + abs(y - yf)
+
+    def check_collision(self, idx, direction, snake_positions, snake_tail_positions):
+        snake = self.snakes[idx]
+
+        if direction == Direction.NORTH:
+            dx, dy = 0, -1
+        elif direction == Direction.EAST:
+            dx, dy = 1, 0
+        elif direction == Direction.SOUTH:
+            dx, dy = 0, 1
+        elif direction == Direction.WEST:
+            dx, dy = -1, 0
+        else:
+            raise ValueError("No valid direction")
 
     def check_collisions(self):
         fruits_to_be_deleted = []
