@@ -82,14 +82,14 @@ class UI:
     def check_input(self, canvas):
         raise NotImplementedError
 
-    def get_canvas_size(self):
+    def get_canvas_size(self, canvas=None):
         raise NotImplementedError
 
     def clear(self, canvas):
         raise NotImplementedError
 
     def _loop(self, canvas):
-        x, y = self.get_canvas_size()
+        x, y = self.get_canvas_size(canvas)
         assert (
             self.game.width <= x and self.game.height <= y
         ), f"Wrong game dimensions {self.game.width}, {self.game.height} != {x}, {y}!"
@@ -141,6 +141,8 @@ class UI:
 
 @dataclass
 class CursesUI(UI):
+    size: Tuple[int, int] = None
+
     def draw_fruit(self, canvas, x, y):
         canvas.addstr(y, x, "O", curses.color_pair(6))
 
@@ -188,12 +190,9 @@ class CursesUI(UI):
         y, x = screen.getmaxyx()
         return x, y
 
-    def _get_canvas_size(self, canvas):
+    def get_canvas_size(self, canvas=None):
         y, x = canvas.getmaxyx()
         return x, y
-
-    def get_canvas_size(self):
-        return curses.wrapper(self._get_canvas_size)
 
 
 @dataclass
@@ -226,7 +225,7 @@ class PygameUI(UI):
             ),
         )
 
-    def get_canvas_size(self):
+    def get_canvas_size(self, canvas=None):
         return self.canvas_size
 
     def draw_fruit(self, canvas, x, y):

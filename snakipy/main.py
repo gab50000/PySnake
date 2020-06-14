@@ -55,7 +55,7 @@ def main(
         max_number_of_fruits=n_fruits,
         border=border,
     )
-    ui = UIClass(game, debug=debug, robot=robot, fps=fps)
+    ui = UIClass(game, debug=debug, robot=robot, fps=fps, size=(width, height))
     try:
         ui.run()
     except StopIteration:
