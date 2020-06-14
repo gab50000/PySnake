@@ -75,8 +75,11 @@ class UI:
     def check_input(self, canvas):
         raise NotImplementedError
 
+    def get_canvas_size(self, canvas):
+        raise NotImplementedError
+
     def _loop(self, canvas):
-        y, x = canvas.getmaxyx()
+        x, y = self.get_canvas_size(canvas)
         assert (
             self.game.width <= x and self.game.height <= y
         ), f"Wrong game dimensions {self.game.width}, {self.game.height} != {x}, {y}!"
@@ -153,6 +156,10 @@ class Curses(UI):
 
     def debug_msg(self, screen, msg):
         screen.addstr(0, 0, msg)
+
+    def get_canvas_size(self, canvas):
+        y, x = canvas.getmaxyx()
+        return x, y
 
 
 class PygameUI(UI):
