@@ -28,10 +28,12 @@ class Snake:
         return f"Snake({x}, {y})"
 
     @classmethod
-    def random_init(cls, width, height):
-        start_direction = random.choice(list(Direction))
+    def random_init(cls, width, height, **kwargs):
+        start_direction = random.choice(
+            [Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST]
+        )
         x, y = random.randint(1, width - 1), random.randint(1, height - 1)
-        return cls(x, y, width, height, start_direction)
+        return cls(x, y, width, height, start_direction, **kwargs)
 
     def update(self, direction):
         if direction:

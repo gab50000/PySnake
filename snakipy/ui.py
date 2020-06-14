@@ -8,8 +8,8 @@ from typing import Optional, Tuple
 import numpy as np
 import pygame
 
-from .game import Game
-from .snake import Direction
+from snakipy.game import Game
+from snakipy.snake import Direction, NeuroSnake
 
 logger = logging.getLogger(__name__)
 
@@ -105,35 +105,15 @@ class UI:
         for step in islice(count(), self.n_steps):
             logger.debug(step)
             self.clear(canvas)
-            coords = self.game.reduced_coordinates(player_snake)
-            fruit_dir = interpret_snake_sensor(coords)
-            if fruit_dir:
-                logger.debug(fruit_dir)
-            coords = coords.flatten()
-            # coords = self.game.state_array.flatten()
-            if self.debug:
-                # arr = self.game.reduced_coordinates(player_snake)
-                self.debug_msg(
-                    canvas,
-                    str(
-                        [
-                            coords,
-                            player_snake.net_output,
-                            game.rewards,
-                            step,
-                            # player_snake.direction,
-                        ]
-                    ),
-                )
             self.draw(canvas)
             self.refresh(canvas)
             self.nap()
             game_it.send(direction)
-            player_input = self.check_input(canvas)
-            if player_input is None and self.robot:
-                direction = player_snake.decide_direction(coords)
-            else:
+            if player_snake:
+                player_input = self.check_input(canvas)
                 direction = player_input
+            else:
+                direction = None
 
     def nap(self):
         raise NotImplementedError

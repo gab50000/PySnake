@@ -1,4 +1,5 @@
 import logging
+import random
 
 import fire
 import numpy as np
@@ -137,11 +138,20 @@ def training(
 def snake_evolution():
     size = (80, 60)
     snakes = [
-        NeuroSnake(x, y, *size, input_size=16, hidden_size=5)
+        NeuroSnake(
+            x,
+            y,
+            *size,
+            input_size=16,
+            hidden_size=5,
+            direction=random.choice(
+                [Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST]
+            ),
+        )
         for x, y in zip([20, 50] * 5, [20, 20, 30, 30, 40, 40, 50, 50, 60, 60])
     ]
 
-    game = Game(*size, snakes=snakes)
+    game = Game(*size, snakes=snakes, border=True)
     ui = PygameUI(game, size=(80, 60))
     ui.run()
 

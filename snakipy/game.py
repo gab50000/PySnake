@@ -3,7 +3,7 @@ import logging
 
 import numpy as np
 
-from .snake import Direction
+from snakipy.snake import Direction, NeuroSnake
 
 logger = logging.getLogger(__name__)
 
@@ -73,13 +73,17 @@ class Game:
         while True:
             direction = yield
             logger.debug("New direction: %s", direction)
-            if self.player_snake:
-                self.punish_circles(self.player_snake, direction)
-                self.player_snake.update(direction)
             for snake in self.snakes:
-                if snake is not self.player_snake:
-                    snake.update(None)
-            self.check_collisions()
+                if not isinstance(snake, NeuroSnake):
+                    continue
+
+                coords = self.reduced_coordinates(snake).flatten()
+                self.punish_circles(snake, direction)
+                direction = snake.decide_direction(coords)
+                snake.update(direction)
+
+                self.check_collisions()
+
             if not self.snakes:
                 game_over = True
             self.update_fruits()
