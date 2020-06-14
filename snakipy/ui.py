@@ -131,7 +131,6 @@ class UI:
 
     def nap(self):
         raise NotImplementedError
-        curses.napms(self.sleep)
 
     def refresh(self, canvas):
         raise NotImplementedError
@@ -188,20 +187,48 @@ class CursesUI(UI):
 
 @dataclass
 class PygameUI(UI):
+    canvas_size: Tuple[int, int] = (20, 20)
     size: Tuple[int, int] = (800, 600)
 
+    def __post_init__(self):
+        self._pixel_height = self.size[0] // self.canvas_size[0]
+        self._pixel_width = self.size[1] // self.canvas_size[1]
+
+    def nap(self):
+        self._fps.tick(self.sleep)
+
+    def clear(self, canvas):
+        canvas.fill((0, 0, 0))
+
+    def refresh(self, canvas):
+        pygame.display.update()
+
     def draw_snake_element(self, canvas, x, y):
-        pygame.draw.rect(canvas, pygame.color.Color((0, 255, 0)), (x, y), 3)
+        pygame.draw.rect(
+            canvas,
+            (0, 255, 0),
+            (
+                x * self._pixel_width,
+                y * self._pixel_height,
+                self._pixel_width,
+                self._pixel_height,
+            ),
+        )
 
     def get_canvas_size(self, canvas):
-        return self.size
+        return self.canvas_size
 
     def draw_fruit(self, canvas, x, y):
-        pygame.draw.circle(canvas, pygame.color.Color((255, 0, 0)), (x, y), 3)
+        pygame.draw.circle(
+            canvas,
+            (255, 0, 0),
+            (x * self._pixel_width, y * self._pixel_height),
+            self._pixel_width,
+        )
 
     def run(self):
         pygame.init()
-        fps = pygame.time.Clock()
+        self._fps = pygame.time.Clock()
         window = pygame.display.set_mode(self.size)
         self._loop(window)
 

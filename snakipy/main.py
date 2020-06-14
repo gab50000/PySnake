@@ -11,6 +11,9 @@ from snakipy.snake import NeuroSnake, Direction
 from snakipy.ui import _get_screen_size, CursesUI, PygameUI
 
 
+logger = logging.getLogger(__name__)
+
+
 def main(
     debug=False,
     robot=False,
@@ -50,7 +53,7 @@ def main(
         max_number_of_fruits=n_fruits,
         border=border,
     )
-    ui = CursesUI(game, debug=debug, robot=robot, sleep=sleep)
+    ui = PygameUI(game, debug=debug, robot=robot, sleep=sleep)
     try:
         ui.run()
     except StopIteration:
