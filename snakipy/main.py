@@ -8,7 +8,7 @@ import numpy as np
 from snakipy.game import Game
 from snakipy.optimize import ParameterSearch
 from snakipy.snake import NeuroSnake, Direction
-from snakipy.ui import _get_screen_size, CursesUI, PygameUI
+from snakipy.ui import CursesUI, PygameUI
 
 
 logger = logging.getLogger(__name__)
@@ -18,19 +18,21 @@ def main(
     debug=False,
     robot=False,
     dna_file=None,
-    width=None,
+    width=20,
+    height=None,
     n_fruits=30,
     hidden_size=10,
     sleep=70,
     border=False,
+    ui="curses",
 ):
     """Play the game"""
 
+    UIClass = {"curses": CursesUI, "pygame": PygameUI}.get(ui.lower())
+
     logging.basicConfig(level=logging.DEBUG, filename="snake.log", filemode="a")
-    x, y = curses.wrapper(_get_screen_size)
-    if width:
-        x = width
-        y = width
+    if not height:
+        height = width
     if dna_file:
         dna = np.load(dna_file)
     else:
@@ -38,13 +40,13 @@ def main(
     input_size = 16
 
     game = Game(
-        x,
-        y,
+        width,
+        height,
         player_snake=NeuroSnake(
-            x // 2,
-            y // 2,
-            max_x=x,
-            max_y=y,
+            width // 2,
+            height // 2,
+            max_x=width,
+            max_y=height,
             input_size=input_size,
             hidden_size=hidden_size,
             dna=dna,
@@ -53,7 +55,7 @@ def main(
         max_number_of_fruits=n_fruits,
         border=border,
     )
-    ui = PygameUI(game, debug=debug, robot=robot, sleep=sleep)
+    ui = UIClass(game, debug=debug, robot=robot, sleep=sleep)
     try:
         ui.run()
     except StopIteration:

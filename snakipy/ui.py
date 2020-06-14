@@ -79,14 +79,14 @@ class UI:
     def check_input(self, canvas):
         raise NotImplementedError
 
-    def get_canvas_size(self, canvas):
+    def get_canvas_size(self):
         raise NotImplementedError
 
     def clear(self, canvas):
         raise NotImplementedError
 
     def _loop(self, canvas):
-        x, y = self.get_canvas_size(canvas)
+        x, y = self.get_canvas_size()
         assert (
             self.game.width <= x and self.game.height <= y
         ), f"Wrong game dimensions {self.game.width}, {self.game.height} != {x}, {y}!"
@@ -171,10 +171,6 @@ class CursesUI(UI):
     def debug_msg(self, screen, msg):
         screen.addstr(0, 0, msg)
 
-    def get_canvas_size(self, canvas):
-        y, x = canvas.getmaxyx()
-        return x, y
-
     def clear(self, canvas):
         canvas.clear()
 
@@ -184,15 +180,27 @@ class CursesUI(UI):
     def nap(self):
         curses.napms(self.sleep)
 
+    @staticmethod
+    def _get_screen_size(screen):
+        y, x = screen.getmaxyx()
+        return x, y
+
+    def _get_canvas_size(self, canvas):
+        y, x = canvas.getmaxyx()
+        return x, y
+
+    def get_canvas_size(self):
+        return curses.wrapper(self._get_canvas_size)
+
 
 @dataclass
 class PygameUI(UI):
-    canvas_size: Tuple[int, int] = (20, 20)
-    size: Tuple[int, int] = (800, 600)
+    size: Tuple[int, int] = (20, 20)
+    canvas_size: Tuple[int, int] = (800, 600)
 
     def __post_init__(self):
-        self._pixel_height = self.size[0] // self.canvas_size[0]
-        self._pixel_width = self.size[1] // self.canvas_size[1]
+        self._pixel_height = self.canvas_size[0] // self.size[0]
+        self._pixel_width = self.canvas_size[1] // self.size[1]
 
     def nap(self):
         self._fps.tick(self.sleep)
@@ -215,7 +223,7 @@ class PygameUI(UI):
             ),
         )
 
-    def get_canvas_size(self, canvas):
+    def get_canvas_size(self):
         return self.canvas_size
 
     def draw_fruit(self, canvas, x, y):
@@ -229,17 +237,8 @@ class PygameUI(UI):
     def run(self):
         pygame.init()
         self._fps = pygame.time.Clock()
-        window = pygame.display.set_mode(self.size)
+        window = pygame.display.set_mode(self.canvas_size)
         self._loop(window)
 
     def check_input(self, canvas):
         pass
-
-
-def _get_screen_size(screen):
-    y, x = screen.getmaxyx()
-    return x, y
-
-
-def get_screen_size():
-    print(curses.wrapper(_get_screen_size))
