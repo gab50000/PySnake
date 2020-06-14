@@ -6,7 +6,7 @@ from abc_algorithm import Swarm
 
 from snakipy.game import Game
 from snakipy.snake import NeuroSnake, Direction
-from snakipy.ui import CursesUI
+from snakipy.ui import CursesUI, PygameUI
 
 logger = logging.getLogger(__name__)
 
@@ -132,6 +132,18 @@ def training(
             ui.run()
         except StopIteration:
             pass
+
+
+def snake_evolution():
+    size = (80, 60)
+    snakes = [
+        NeuroSnake(x, y, *size, input_size=16, hidden_size=5)
+        for x, y in zip([20, 50] * 5, [20, 20, 30, 30, 40, 40, 50, 50, 60, 60])
+    ]
+
+    game = Game(*size, snakes=snakes)
+    ui = PygameUI(game, size=(80, 60))
+    ui.run()
 
 
 def cli():

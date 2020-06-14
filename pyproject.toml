@@ -15,4 +15,5 @@ requires = [
 ]
 
 [tool.flit.scripts]
-snake = "snakipy.main:entrypoint"
+snake = "snakipy.main:cli"
+snake_train = "snakipy.optimize:cli"

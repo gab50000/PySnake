@@ -61,5 +61,5 @@ def main(
         print("Score:", *game.rewards)
 
 
-def entrypoint():
+def cli():
     fire.Fire({"main": main, "training": training})
