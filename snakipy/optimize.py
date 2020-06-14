@@ -1,8 +1,12 @@
 import logging
 
-from snakipy.game import Game
-from snakipy.snake import NeuroSnake
+import fire
+import numpy as np
+from abc_algorithm import Swarm
 
+from snakipy.game import Game
+from snakipy.snake import NeuroSnake, Direction
+from snakipy.ui import CursesUI
 
 logger = logging.getLogger(__name__)
 
@@ -44,3 +48,91 @@ class ParameterSearch:
         (game_score,) = game.rewards
         logger.info("Total score: %s", game_score)
         return game_score
+
+
+def training(
+    n_optimize=100,
+    hidden_size=5,
+    max_steps=100,
+    search_radius=1,
+    log_level="info",
+    n_employed=20,
+    n_onlooker=20,
+    n_fruits=10,
+    n_average=10,
+    border=False,
+    dna_file=None,
+    width=20,
+    height=None,
+    seed=None,
+):
+    logging.basicConfig(
+        level=getattr(logging, log_level.upper()),
+        filename="snaketrain.log",
+        filemode="w",
+    )
+    x = width
+    y = height if height else x
+    input_size = 16
+    out_size = 3
+    # Reduce y-size by one to avoid curses scroll problems
+    game_options = {
+        "width": x,
+        "height": y,
+        "max_number_of_fruits": n_fruits,
+        "border": border,
+        "seed": seed,
+    }
+    snake_options = {
+        "x": x // 2,
+        "y": y // 2,
+        "max_x": x,
+        "max_y": y,
+        "input_size": input_size,
+        "hidden_size": hidden_size,
+        "direction": Direction.SOUTH,
+    }
+
+    if dna_file:
+        try:
+            dna = np.load(dna_file)
+        except FileNotFoundError:
+            logger.error("File not found")
+            dna = None
+    else:
+        dna = np.random.normal(
+            size=(input_size + 1) * hidden_size + (hidden_size + 1) * out_size,
+            loc=0,
+            scale=1.0,
+        )
+
+    opt = ParameterSearch(
+        game_options, snake_options, max_steps=max_steps, n_average=n_average, dna=dna
+    )
+    swarm = Swarm(
+        opt.benchmark,
+        (input_size + 1) * hidden_size + (hidden_size + 1) * out_size,
+        n_employed=n_employed,
+        n_onlooker=n_onlooker,
+        limit=10,
+        max_cycles=n_optimize,
+        lower_bound=-1,
+        upper_bound=1,
+        search_radius=search_radius,
+    )
+    for result in swarm.run():
+        logger.info("Saving to %s", dna_file)
+        np.save(dna_file, result)
+        game = Game(
+            **game_options,
+            player_snake=NeuroSnake(**snake_options, dna=np.load(dna_file)),
+        )
+        ui = CursesUI(game, robot=True, n_steps=max_steps)
+        try:
+            ui.run()
+        except StopIteration:
+            pass
+
+
+def cli():
+    fire.Fire()
