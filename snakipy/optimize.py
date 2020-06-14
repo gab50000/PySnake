@@ -135,8 +135,17 @@ def training(
             pass
 
 
-def snake_evolution():
-    size = (80, 60)
+def create_snakes(size, n_x, n_y, dnas=None):
+
+    dist_x = size[0] // (n_x + 1)
+    dist_y = size[1] // (n_y + 1)
+
+    x_pos = np.arange(dist_x // 2, size[0], dist_x)
+    y_pos = np.arange(dist_y // 2, size[1], dist_y)
+    X, Y = np.meshgrid(x_pos, y_pos)
+
+    if not dnas:
+        dnas = [None] * x_pos.size * y_pos.size
     snakes = [
         NeuroSnake(
             x,
@@ -147,9 +156,17 @@ def snake_evolution():
             direction=random.choice(
                 [Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST]
             ),
+            dna=dna,
         )
-        for x, y in zip([20, 50] * 5, [20, 20, 30, 30, 40, 40, 50, 50, 60, 60])
+        for x, y, dna in zip(X.flatten(), Y.flatten(), dnas)
     ]
+    return snakes
+
+
+def snake_evolution(dnafile):
+    size = (80, 60)
+
+    snakes = create_snakes(size, 8, 6)
 
     game = Game(*size, snakes=snakes, border=True)
     ui = PygameUI(game, size=(80, 60))
