@@ -52,7 +52,7 @@ class Game:
     seed: Optional[int] = None
 
     def __post_init__(self):
-        self.fruits = set()
+        self.fruits = []
 
         if self.snakes is None and self.player_snake is None:
             raise ValueError("There are no snakes!")
@@ -70,11 +70,7 @@ class Game:
             direction = yield
             logger.debug("New direction: %s", direction)
 
-            snake_positions = {
-                coord for snake in self.snakes for coord in snake.coordinates
-            }
-            snake_tail_positions = {snake.tail for snake in self.snakes}
-
+            new_snakes = []
             for idx, snake in enumerate(self.snakes):
                 if not isinstance(snake, NeuroSnake):
                     continue
@@ -82,11 +78,9 @@ class Game:
                 coords = self.reduced_coordinates(snake).flatten()
                 self.punish_circles(snake, direction)
                 direction = snake.decide_direction(coords)
-                snk_game_over = self.check_collision(
-                    idx, direction, snake_positions, snake_tail_positions
-                )
-                if not snk_game_over:
-                    snake.update(direction)
+                new_snakes.append(snake.update(direction))
+
+            self.snakes = self.check_collision(new_snakes)
 
             if not self.snakes:
                 game_over = True
@@ -150,78 +144,33 @@ class Game:
         xf, yf = fruit
         return abs(x - xf) + abs(y - yf)
 
-    def check_collision(self, idx, direction, snake_positions, snake_tail_positions):
-        snake = self.snakes[idx]
+    def check_collision(self, new_snakes):
+        board = {}
+        heads = {}
+        to_be_deleted = []
 
-        if direction == Direction.NORTH:
-            dx, dy = 0, -1
-        elif direction == Direction.EAST:
-            dx, dy = 1, 0
-        elif direction == Direction.SOUTH:
-            dx, dy = 0, 1
-        elif direction == Direction.WEST:
-            dx, dy = -1, 0
-        else:
-            raise ValueError("No valid direction")
+        for i, snk in enumerate(new_snakes):
+            hx, hy = snk.head
 
-    def check_collisions(self):
-        fruits_to_be_deleted = []
-        snakes_to_be_deleted = []
+            if any((hx < 0, hx >= self.width, hy < 0, hy >= self.height)):
+                to_be_deleted.append(i)
+                self.rewards[i] += DEATH_REWARD
 
-        for s_idx, s in enumerate(self.snakes):
-            x_s, y_s = s.coordinates[-1]
+            if (hx, hy) in self.fruits:
+                self.fruits.remove((hx, hy))
+                self.rewards[i] += FRUIT_REWARD
 
-            if self.border:
-                if any((x_s < 0, x_s >= self.width, y_s < 0, y_s >= self.height)):
-                    snakes_to_be_deleted.append(s)
-                    self.rewards[s_idx] += DEATH_REWARD
-                    continue
-            else:
-                x_s %= self.width
-                y_s %= self.height
-                s.coordinates[-1] = x_s, y_s
+            heads.get((hx, hy), []).append(i)
+            for x, y in snk.coordinates:
+                board.get((x, y), []).append(i)
 
-            # Check fruit collision
-            for fruit in self.fruits:
-                if (x_s, y_s) == fruit:
-                    s.length += 2
-                    fruits_to_be_deleted.append(fruit)
-                    self.rewards[s_idx] += FRUIT_REWARD
-                    logger.debug("Snake %s got a fruit", s_idx)
-            # Check snake collisions
-            for s2_idx, s2 in enumerate(self.snakes):
-                if s_idx != s2_idx:
-                    for x2s, y2s in s2.coordinates:
-                        if (x_s, y_s) == (x2s, y2s):
-                            snakes_to_be_deleted.append(s)
-                else:
-                    for x2s, y2s in list(s2.coordinates)[:-1]:
-                        if (x_s, y_s) == (x2s, y2s):
-                            snakes_to_be_deleted.append(s)
-                            self.rewards[s_idx] += DEATH_REWARD
+        for pos, count in board.items():
+            if count > 1:
+                idx = heads[pos]
+                to_be_deleted.append(idx)
+                self.rewards[idx] += DEATH_REWARD
 
-        for tbd in fruits_to_be_deleted:
-            self.fruits.remove(tbd)
-        for snk in snakes_to_be_deleted:
-            self.snakes.remove(snk)
-
-    @property
-    def state_array(self):
-        """
-        Return array of current state.
-        The game board is encoded as follows:
-        Snake body: 1
-        Fruit : 2
-        """
-
-        state = np.zeros((self.width, self.height, 2), float)
-        for snake in self.snakes:
-            for x, y in snake.coordinates:
-                state[x, y, 0] = 1
-
-        for x, y in self.fruits:
-            state[x, y, 1] = 1
-        return state
+        return [snk for i, snk in enumerate(new_snakes) if i not in to_be_deleted]
 
     def is_wall_or_snake(self, coord):
         if self.border:

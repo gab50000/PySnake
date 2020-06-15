@@ -1,11 +1,13 @@
 from collections import deque
+from dataclasses import dataclass
 from enum import Enum
 import random
 import logging
+from typing import List, Tuple, Optional
 
 import numpy as np
 
-from .neuro import NeuralNet
+from snakipy.neuro import NeuralNet
 
 
 logger = logging.getLogger(__name__)
@@ -20,12 +22,22 @@ def direction_to_vector(direction):
     return {Direction.NORTH: (0, -1), Direction.NORTHEAST: (1, -1)}
 
 
+@dataclass
 class Snake:
-    def __init__(self, x, y, max_x, max_y, direction):
-        self.coordinates = deque([(x, y)])
-        self.max_x, self.max_y = max_x, max_y
-        self.direction = direction
-        self.length = 1
+    coordinates: List[Tuple[int, int]]
+    board_width: int
+    board_height: int
+    direction: Direction
+    length: int = 2
+    periodic: bool = False
+
+    @classmethod
+    def new_snake(cls, x, y, board_width, board_height, direction, **kwargs):
+        coordinates = [(x, y)]
+        board_width, board_height = board_width, board_height
+        direction = direction
+        length = 2
+        return cls(coordinates, board_width, board_height, direction, length, **kwargs)
 
     def __repr__(self):
         x, y = self.head
@@ -40,14 +52,29 @@ class Snake:
         return self.coordinates[0]
 
     @classmethod
-    def random_init(cls, width, height, **kwargs):
+    def random_init(cls, board_width, board_height, **kwargs):
         start_direction = random.choice(
             [Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST]
         )
-        x, y = random.randint(1, width - 1), random.randint(1, height - 1)
-        return cls(x, y, width, height, start_direction, **kwargs)
+        x, y = random.randint(1, board_width - 1), random.randint(1, board_height - 1)
+        return cls(x, y, board_width, board_height, start_direction, **kwargs)
 
     def update(self, direction):
+        """
+
+        Args:
+            direction: new direction
+
+        Returns: snake
+
+        Examples:
+            >>> snk = Snake.new_snake(3, 3, 10, 10, Direction.EAST)
+            >>> snk.update(Direction.EAST)
+            Snake(4, 3)
+            >>> snk = Snake.new_snake(3, 9, 10, 10, Direction.SOUTH, periodic=True)
+            >>> snk.update(Direction.SOUTH)
+            Snake(3, 0)
+        """
         if direction:
             new_direction = direction
         else:
@@ -71,29 +98,38 @@ class Snake:
             new_direction = self.direction
 
         if new_direction == Direction.NORTH:
-            new_x, new_y = head_x, head_y - 1
+            dx, dy = 0, -1
         elif new_direction == Direction.EAST:
-            new_x, new_y = head_x + 1, head_y
+            dx, dy = 1, 0
         elif new_direction == Direction.SOUTH:
-            new_x, new_y = head_x, head_y + 1
+            dx, dy = 0, 1
         else:
-            new_x, new_y = head_x - 1, head_y
+            dx, dy = -1, 0
+
+        new_x, new_y = head_x + dx, head_y + dy
+
+        if self.periodic:
+            new_x = new_x % self.board_width
+            new_y = new_y % self.board_height
 
         logger.debug("New position: (%s, %s)", new_x, new_y)
-        self.direction = new_direction
 
-        self.coordinates.append((new_x, new_y))
-        if len(self.coordinates) > self.length:
-            self.coordinates.popleft()
+        new_coordinates = self.coordinates + [(new_x, new_y)]
+        new_coordinates = new_coordinates[-self.length :]
+
+        init_params = {**vars(self), "coordinates": new_coordinates}
+        return type(self)(**init_params)
 
 
+@dataclass
 class NeuroSnake(Snake):
-    def __init__(
-        self, x, y, max_x, max_y, input_size, hidden_size, direction=None, dna=None
-    ):
-        super().__init__(x, y, max_x, max_y, direction=direction)
-        self.net = NeuralNet(input_size, hidden_size, 3, dna=dna)
-        self.net_output = None
+    input_size: int = 16
+    hidden_size: int = 5
+    dna: Optional[np.ndarray] = None
+    net: Optional[NeuralNet] = None
+
+    def __post_init__(self):
+        self.net = NeuralNet(self.input_size, self.hidden_size, 3, dna=self.dna)
 
     def decide_direction(self, view):
         dirs = (Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST)
@@ -101,9 +137,9 @@ class NeuroSnake(Snake):
             self.direction = random.choice(dirs)
             return self.direction
 
-        self.net_output = self.net.forward(view)
+        net_output = self.net.forward(view)
         dir_idx = dirs.index(self.direction)
-        idx = np.argmax(self.net_output) - 1
+        idx = np.argmax(net_output) - 1
         new_dir = dirs[(dir_idx + idx) % 4]
         logger.debug("Old direction: %s", self.direction)
         logger.debug("New direction: %s", new_dir)

@@ -40,11 +40,11 @@ def main(
     game = Game(
         width,
         height,
-        player_snake=NeuroSnake(
+        player_snake=NeuroSnake.new_snake(
             width // 2,
             height // 2,
-            max_x=width,
-            max_y=height,
+            board_width=width,
+            board_height=height,
             input_size=input_size,
             hidden_size=hidden_size,
             dna=dna,

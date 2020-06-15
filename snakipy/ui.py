@@ -58,12 +58,12 @@ class UI:
         self.sleep = 1 / self.fps
 
     def draw(self, canvas):
-        for y, row in enumerate(self.game.board):
-            for x, elem in enumerate(row):
-                if elem == BoardState.FRUIT:
-                    self.draw_fruit(canvas, x, y)
-                elif elem == BoardState.SNAKE:
-                    self.draw_snake_element(canvas, x, y)
+        for snake in self.game.snakes:
+            for x, y in snake.coordinates:
+                self.draw_snake_element(canvas, x, y)
+
+        for x, y in self.game.fruits:
+            self.draw_fruit(canvas, x, y)
 
     def draw_snake_element(self, canvas, x, y):
         raise NotImplementedError

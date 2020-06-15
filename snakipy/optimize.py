@@ -147,7 +147,7 @@ def create_snakes(size, n_x, n_y, dnas=None):
     if not dnas:
         dnas = [None] * x_pos.size * y_pos.size
     snakes = [
-        NeuroSnake(
+        NeuroSnake.new_snake(
             x,
             y,
             *size,
@@ -170,7 +170,7 @@ def snake_evolution(dnafile):
     snakes = create_snakes(size, 8, 6)
 
     game = Game(*size, snakes=snakes, border=True)
-    ui = PygameUI(game, size=(80, 60))
+    ui = PygameUI(game, size=(80, 60), fps=30)
     ui.run()
 
 
