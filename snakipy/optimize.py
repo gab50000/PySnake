@@ -4,6 +4,7 @@ import random
 import fire
 import numpy as np
 from abc_algorithm import Swarm
+from tqdm import tqdm, trange
 
 from snakipy.game import Game
 from snakipy.snake import NeuroSnake, Direction
@@ -163,22 +164,62 @@ def create_snakes(size, n_x, n_y, dnas=None):
     return snakes
 
 
-def snake_evolution(dnafile=None):
-    logging.basicConfig(level=logging.INFO)
+def evolve(dnas, scores, n=5):
+    top_indices = np.argsort(scores)[::-1][:n]
+    top_dna = [dnas[i] for i in top_indices]
+    n_mutate = (len(dnas) - n) // 3 * 2
+    n_random = len(dnas) - n - n_mutate
+    new_dnas = []
+    for _ in range(n_mutate):
+        dna = random.choice(top_dna) + np.random.normal(
+            0, scale=0.01, size=top_dna[0].size
+        )
+        new_dnas.append(dna)
+
+    new_dnas.extend([None] * n_random)
+
+    return top_dna + new_dnas
+
+
+def snake_evolution(dnafile=None, n_steps=500, n_batch=10, n_games=100, debug=False):
+    logging.basicConfig(level=logging.DEBUG if debug else logging.INFO)
     size = (80, 60)
+    nx, ny = 8, 6
 
     if dnafile:
         dna = np.load(dnafile)
     else:
         dna = None
 
-    snakes = create_snakes(size, 8, 6, dnas=[dna] * 48)
+    snakes = create_snakes(size, nx, ny, dnas=[dna] * nx * ny)
+
+    for _ in trange(n_games):
+
+        scores = []
+        for _ in trange(n_batch):
+            game = Game(*size, snakes=snakes, border=True, number_of_steps=n_steps)
+
+            if debug:
+                ui = PygameUI(game, size=size, fps=100, robot=True)
+                ui.run()
+
+            else:
+                for _ in game:
+                    pass
+
+            scores.append(game.rewards)
+
+        dnas = [snk.dna for snk in snakes]
+        scores = np.mean(scores, axis=0)
+        logger.info("Median score: %s", np.median(scores))
+        logger.info("Mean score: %s", np.mean(scores))
+        logger.info("Top score: %s", np.max(scores))
+        new_dnas = evolve(dnas, scores)
+        snakes = create_snakes(size, nx, ny, dnas=new_dnas)
 
     game = Game(*size, snakes=snakes, border=True)
-    ui = PygameUI(game, size=(80, 60), fps=30)
+    ui = PygameUI(game, size=size, fps=20)
     ui.run()
-
-    breakpoint()
 
 
 def cli():

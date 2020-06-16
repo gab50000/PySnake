@@ -49,7 +49,6 @@ class UI:
     """
 
     game: Game
-    n_steps: Optional[int] = None
     debug: bool = False
     robot: bool = False
     fps: int = 20
@@ -99,7 +98,7 @@ class UI:
         game_it = iter(game)
         direction = None
 
-        for step in islice(count(), self.n_steps):
+        for step in count():
             logger.debug(step)
             self.clear(canvas)
             self.draw(canvas)

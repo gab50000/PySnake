@@ -2,6 +2,7 @@ import curses
 from enum import Enum, auto
 import logging
 from dataclasses import dataclass, field
+from itertools import islice, count
 from typing import List, Optional
 
 import numpy as np
@@ -50,6 +51,7 @@ class Game:
     max_number_of_snakes: int = 1
     border: bool = False
     seed: Optional[int] = None
+    number_of_steps: Optional[int] = None
 
     def __post_init__(self):
         self.fruits = []
@@ -66,7 +68,7 @@ class Game:
     def __iter__(self):
         game_over = False
 
-        while True:
+        for _ in islice(count(), self.number_of_steps):
             direction = yield
             logger.debug("New direction: %s", direction)
 
@@ -79,7 +81,7 @@ class Game:
                     continue
 
                 coords = self.reduced_coordinates(snake).flatten()
-                self.punish_circles(snake, direction)
+                # self.punish_circles(snake, direction)
                 direction = snake.decide_direction(coords)
                 new_snakes.append(snake.update(direction))
 

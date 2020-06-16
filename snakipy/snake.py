@@ -46,7 +46,7 @@ class Snake:
         coordinates = [(x, y)]
         board_width, board_height = board_width, board_height
         direction = direction
-        length = 2
+        length = 3
         return cls(coordinates, board_width, board_height, direction, length, **kwargs)
 
     def __repr__(self):
@@ -146,6 +146,7 @@ class NeuroSnake(Snake):
     def __post_init__(self):
         self.net = NeuralNet(self.input_size, self.hidden_size, 3, dna=self.dna)
         if self.dna is None:
+            logger.debug("No dna found. Initialize randomly")
             self.dna = self.net.dna
 
     def decide_direction(self, view):
