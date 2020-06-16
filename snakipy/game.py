@@ -159,6 +159,7 @@ class Game:
             if (hx, hy) in self.fruits:
                 self.fruits.remove((hx, hy))
                 self.rewards[i] += FRUIT_REWARD
+                snk.length += 1
 
             heads.get((hx, hy), []).append(i)
             for x, y in snk.coordinates:
