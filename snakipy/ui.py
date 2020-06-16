@@ -59,6 +59,8 @@ class UI:
 
     def draw(self, canvas):
         for snake in self.game.snakes:
+            if snake.game_over:
+                continue
             for x, y in snake.coordinates:
                 self.draw_snake_element(canvas, x, y)
 
@@ -103,7 +105,10 @@ class UI:
             self.draw(canvas)
             self.refresh(canvas)
             self.nap()
-            game_it.send(direction)
+            try:
+                game_it.send(direction)
+            except StopIteration:
+                break
             if player_snake:
                 player_input = self.check_input(canvas)
                 direction = player_input

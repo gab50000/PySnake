@@ -30,6 +30,16 @@ class Snake:
     direction: Direction
     length: int = 2
     periodic: bool = False
+    game_over: bool = False
+
+    _idx = 0
+
+    def __post_init__(self):
+        self._idx = type(self)._idx
+        type(self)._idx += 1
+
+    def __eq__(self, other):
+        return isinstance(other, Snake) and self._idx == other._idx
 
     @classmethod
     def new_snake(cls, x, y, board_width, board_height, direction, **kwargs):
@@ -117,11 +127,16 @@ class Snake:
         new_coordinates = self.coordinates + [(new_x, new_y)]
         new_coordinates = new_coordinates[-self.length :]
 
-        init_params = {**vars(self), "coordinates": new_coordinates}
+        init_params = {
+            **vars(self),
+            "coordinates": new_coordinates,
+            "direction": new_direction,
+        }
+        init_params = {k: v for k, v in init_params.items() if not k.startswith("_")}
         return type(self)(**init_params)
 
 
-@dataclass
+@dataclass(eq=False)
 class NeuroSnake(Snake):
     input_size: int = 16
     hidden_size: int = 5
@@ -130,6 +145,8 @@ class NeuroSnake(Snake):
 
     def __post_init__(self):
         self.net = NeuralNet(self.input_size, self.hidden_size, 3, dna=self.dna)
+        if self.dna is None:
+            self.dna = self.net.dna
 
     def decide_direction(self, view):
         dirs = (Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST)

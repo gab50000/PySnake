@@ -75,6 +75,9 @@ class Game:
                 if not isinstance(snake, NeuroSnake):
                     continue
 
+                if snake.game_over:
+                    continue
+
                 coords = self.reduced_coordinates(snake).flatten()
                 self.punish_circles(snake, direction)
                 direction = snake.decide_direction(coords)
@@ -147,31 +150,31 @@ class Game:
     def check_collision(self, new_snakes):
         board = {}
         heads = {}
-        to_be_deleted = []
 
         for i, snk in enumerate(new_snakes):
             hx, hy = snk.head
 
             if any((hx < 0, hx >= self.width, hy < 0, hy >= self.height)):
-                to_be_deleted.append(i)
                 self.rewards[i] += DEATH_REWARD
+                snk.game_over = True
 
             if (hx, hy) in self.fruits:
                 self.fruits.remove((hx, hy))
                 self.rewards[i] += FRUIT_REWARD
                 snk.length += 1
 
-            heads.get((hx, hy), []).append(i)
+            heads.setdefault((hx, hy), []).append(i)
             for x, y in snk.coordinates:
-                board.get((x, y), []).append(i)
+                board[(x, y)] = board.get((x, y), 0) + 1
 
         for pos, count in board.items():
             if count > 1:
-                idx = heads[pos]
-                to_be_deleted.append(idx)
-                self.rewards[idx] += DEATH_REWARD
+                indices = heads[pos]
+                for idx in indices:
+                    self.rewards[idx] += DEATH_REWARD
+                    new_snakes[idx].game_over = True
 
-        return [snk for i, snk in enumerate(new_snakes) if i not in to_be_deleted]
+        return new_snakes
 
     def is_wall_or_snake(self, coord):
         if self.border:

@@ -163,15 +163,22 @@ def create_snakes(size, n_x, n_y, dnas=None):
     return snakes
 
 
-def snake_evolution(dnafile):
+def snake_evolution(dnafile=None):
     logging.basicConfig(level=logging.INFO)
     size = (80, 60)
 
-    snakes = create_snakes(size, 8, 6)
+    if dnafile:
+        dna = np.load(dnafile)
+    else:
+        dna = None
+
+    snakes = create_snakes(size, 8, 6, dnas=[dna] * 48)
 
     game = Game(*size, snakes=snakes, border=True)
     ui = PygameUI(game, size=(80, 60), fps=30)
     ui.run()
+
+    breakpoint()
 
 
 def cli():
